@@ -1,10 +1,25 @@
 import 'package:a_core/core/app_theme.dart';
-import 'package:a_core/features/diario/presentation/styles_page.dart';
+import 'package:a_core/core/routes/app_router.dart';
+import 'package:a_core/features/auth/presentation/provider/auth_provider.dart';
+import 'package:a_core/features/user/presentation/provider/user_provider.dart';
+import 'package:a_core/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -12,12 +27,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: StylesPage(),
+    final auth = context.watch<AuthProvider>();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userProv = context.read<UserProvider>();
+      if (auth.user != null) {
+        userProv.watchUser(auth.user!.uid);
+      } else {
+        userProv.stopWatching();
+      }
+    });
+
+    final router = createRouter(context);
+
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.dark,
+      routerConfig: router,
     );
   }
 }
