@@ -1,3 +1,6 @@
+import 'package:a_core/features/logros/presentation/pages/achievements_page.dart';
+import 'package:a_core/features/logros/presentation/pages/logros_home_page.dart';
+import 'package:a_core/features/logros/presentation/pages/logros_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -23,6 +26,10 @@ abstract class AppRoutes {
   static const diary = '/diary';
   static const diaryEntry = '/diary/entry';
   static const diaryTemplates = '/diary/templates';
+
+  // Logros
+  static const logros = '/logros';
+  static const logrosAchievements = '/logros/achievements';
 }
 
 GoRouter createRouter(BuildContext context) {
@@ -54,7 +61,7 @@ GoRouter createRouter(BuildContext context) {
       // ── Home ──────────────────────────────
       GoRoute(path: AppRoutes.home, builder: (_, __) => const HomePage()),
 
-      // ── Diario (ShellRoute con BottomNav propio) ──
+      // ── Diario ────────────────────────────
       ShellRoute(
         builder: (context, state, child) => DiaryShell(child: child),
         routes: [
@@ -69,6 +76,15 @@ GoRouter createRouter(BuildContext context) {
             ],
           ),
           GoRoute(path: AppRoutes.diaryTemplates, builder: (_, __) => const DiaryTemplatesPage()),
+        ],
+      ),
+
+      // ── Logros ────────────────────────────
+      ShellRoute(
+        builder: (context, state, child) => LogrosShell(child: child),
+        routes: [
+          GoRoute(path: AppRoutes.logros, builder: (_, __) => const LogrosHomePage()),
+          GoRoute(path: AppRoutes.logrosAchievements, builder: (_, __) => const AchievementsPage()),
         ],
       ),
     ],

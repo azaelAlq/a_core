@@ -15,11 +15,18 @@ const _allModules = [
     route: AppRoutes.diary,
   ),
   _ModuleMeta(
+    id: 'logros',
+    label: 'Logros',
+    icon: Icons.track_changes_outlined,
+    description: 'Hábitos, rachas y medallas.',
+    route: AppRoutes.logros,
+  ),
+  _ModuleMeta(
     id: 'gym',
     label: 'Gym',
     icon: Icons.fitness_center_outlined,
-    description: 'Seguimiento de tus rutinas de entrenamiento.',
-    route: null, // próximamente
+    description: 'Seguimiento de tus rutinas.',
+    route: null,
   ),
 ];
 
@@ -51,7 +58,6 @@ class HomePage extends StatelessWidget {
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // ── Módulos activos ───────────────
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
               sliver: SliverToBoxAdapter(
@@ -96,8 +102,6 @@ class HomePage extends StatelessWidget {
                   },
                 ),
               ),
-
-            // ── Módulos disponibles ───────────
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
               sliver: SliverToBoxAdapter(

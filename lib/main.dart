@@ -2,6 +2,7 @@ import 'package:a_core/core/app_theme.dart';
 import 'package:a_core/core/routes/app_router.dart';
 import 'package:a_core/features/auth/presentation/provider/auth_provider.dart';
 import 'package:a_core/features/diario/presentation/provider/diary_provider.dart';
+import 'package:a_core/features/logros/presentation/provider/logros_provider.dart';
 import 'package:a_core/features/user/presentation/provider/user_provider.dart';
 import 'package:a_core/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -14,15 +15,13 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDateFormatting('es', null);
 
-  final authProvider = AuthProvider();
-  await authProvider.verificateSession(); // <-- aquí
-
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (BuildContext context) => authProvider),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => DiaryProvider()),
+        ChangeNotifierProvider(create: (_) => LogrosProvider()),
       ],
       child: const MyApp(),
     ),
@@ -35,6 +34,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userProv = context.read<UserProvider>();
       if (auth.user != null) {
