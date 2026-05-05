@@ -15,6 +15,12 @@ class AuthService implements AuthRepository {
     });
   }
 
+  Future<AppUser?> verificateSession() async {
+    final firebaseUser = _auth.currentUser;
+    if (firebaseUser == null) return null;
+    return _userService.getUser(firebaseUser.uid);
+  }
+
   @override
   Future<AppUser> signIn({required String email, required String password}) async {
     final cred = await _auth.signInWithEmailAndPassword(email: email, password: password);

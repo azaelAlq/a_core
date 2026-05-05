@@ -10,6 +10,7 @@ class AppTextField extends StatefulWidget {
   final TextInputAction textInputAction;
   final VoidCallback? onEditingComplete;
   final Widget? prefixIcon;
+  final List<String>? autofillHints; // <-- campo en la clase
 
   const AppTextField({
     super.key,
@@ -22,6 +23,7 @@ class AppTextField extends StatefulWidget {
     this.textInputAction = TextInputAction.next,
     this.onEditingComplete,
     this.prefixIcon,
+    this.autofillHints, // <-- opcional, sin required
   });
 
   @override
@@ -42,6 +44,7 @@ class _AppTextFieldState extends State<AppTextField> {
       textInputAction: widget.textInputAction,
       onEditingComplete: widget.onEditingComplete,
       validator: widget.validator,
+      autofillHints: widget.autofillHints, // <-- pásalo aquí
       style: theme.textTheme.bodyLarge,
       decoration: InputDecoration(
         labelText: widget.label,

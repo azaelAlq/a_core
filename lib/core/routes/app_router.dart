@@ -1,29 +1,30 @@
-import 'package:a_core/features/auth/presentation/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:a_core/features/auth/presentation/provider/auth_provider.dart';
+import 'package:a_core/features/auth/presentation/pages/login_page.dart';
 import 'package:a_core/features/auth/presentation/pages/register_page.dart';
 import 'package:a_core/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:a_core/features/home/presentation/pages/home_page.dart';
+import 'package:a_core/features/diario/presentation/pages/diary_shell.dart';
+import 'package:a_core/features/diario/presentation/pages/diary_home_page.dart';
+import 'package:a_core/features/diario/presentation/pages/diary_entry_page.dart';
+import 'package:a_core/features/diario/presentation/pages/diary_templates_page.dart';
+import 'package:a_core/features/diario/domain/entities/diary_entry.dart';
 
-// ─────────────────────────────────────────────
-//  ROUTE NAMES  (usa estas constantes siempre)
-// ─────────────────────────────────────────────
 abstract class AppRoutes {
   static const login = '/login';
   static const register = '/register';
   static const forgotPassword = '/forgot-password';
   static const home = '/home';
-  // Módulos futuros:
-  // static const diario   = '/diario';
-  // static const gym      = '/gym';
+
+  // Diario
+  static const diary = '/diary';
+  static const diaryEntry = '/diary/entry';
+  static const diaryTemplates = '/diary/templates';
 }
 
-// ─────────────────────────────────────────────
-//  ROUTER
-// ─────────────────────────────────────────────
 GoRouter createRouter(BuildContext context) {
   final authProvider = context.read<AuthProvider>();
 
@@ -33,37 +34,43 @@ GoRouter createRouter(BuildContext context) {
     redirect: (context, state) {
       final isAuthenticated = authProvider.user != null;
       final isInitial = authProvider.status == AuthStatus.initial;
-      final isAuthRoute =
-          state.matchedLocation == AppRoutes.login ||
-          state.matchedLocation == AppRoutes.register ||
-          state.matchedLocation == AppRoutes.forgotPassword;
+      final isAuthRoute = [
+        AppRoutes.login,
+        AppRoutes.register,
+        AppRoutes.forgotPassword,
+      ].contains(state.matchedLocation);
 
       if (isInitial) return null;
-
       if (!isAuthenticated && !isAuthRoute) return AppRoutes.login;
       if (isAuthenticated && isAuthRoute) return AppRoutes.home;
       return null;
     },
     routes: [
       // ── Auth ──────────────────────────────
-      GoRoute(path: AppRoutes.login, name: 'login', builder: (_, __) => const LoginPage()),
-      GoRoute(path: AppRoutes.register, name: 'register', builder: (_, __) => const RegisterPage()),
-      GoRoute(
-        path: AppRoutes.forgotPassword,
-        name: 'forgotPassword',
-        builder: (_, __) => const ForgotPasswordPage(),
-      ),
+      GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginPage()),
+      GoRoute(path: AppRoutes.register, builder: (_, __) => const RegisterPage()),
+      GoRoute(path: AppRoutes.forgotPassword, builder: (_, __) => const ForgotPasswordPage()),
 
       // ── Home ──────────────────────────────
-      GoRoute(path: AppRoutes.home, name: 'home', builder: (_, __) => const HomePage()),
+      GoRoute(path: AppRoutes.home, builder: (_, __) => const HomePage()),
 
-      // ── Módulos futuros (ShellRoute con BottomNavBar propio)
-      // ShellRoute(
-      //   builder: (context, state, child) => DiarioShell(child: child),
-      //   routes: [
-      //     GoRoute(path: AppRoutes.diario, builder: (_, __) => const DiarioPage()),
-      //   ],
-      // ),
+      // ── Diario (ShellRoute con BottomNav propio) ──
+      ShellRoute(
+        builder: (context, state, child) => DiaryShell(child: child),
+        routes: [
+          GoRoute(
+            path: AppRoutes.diary,
+            builder: (_, __) => const DiaryHomePage(),
+            routes: [
+              GoRoute(
+                path: 'entry',
+                builder: (_, state) => DiaryEntryPage(entry: state.extra as DiaryEntry?),
+              ),
+            ],
+          ),
+          GoRoute(path: AppRoutes.diaryTemplates, builder: (_, __) => const DiaryTemplatesPage()),
+        ],
+      ),
     ],
   );
 }

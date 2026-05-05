@@ -30,6 +30,10 @@ class AuthProvider extends ChangeNotifier {
     });
   }
 
+  Future<AppUser?> verificateSession() async {
+    return _authService.verificateSession();
+  }
+
   Future<void> signIn({required String email, required String password}) async {
     _setLoading();
     try {

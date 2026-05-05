@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'package:a_core/core/routes/app_router.dart';
 import 'package:a_core/features/auth/presentation/provider/auth_provider.dart';
 import 'package:a_core/features/user/presentation/provider/user_provider.dart';
 
-// Catálogo de módulos disponibles en la app
-const _availableModules = [
+const _allModules = [
   _ModuleMeta(
     id: 'diario',
     label: 'Diario',
     icon: Icons.book_outlined,
     description: 'Registra tus pensamientos y reflexiones.',
+    route: AppRoutes.diary,
   ),
   _ModuleMeta(
     id: 'gym',
     label: 'Gym',
     icon: Icons.fitness_center_outlined,
     description: 'Seguimiento de tus rutinas de entrenamiento.',
+    route: null, // próximamente
   ),
 ];
 
@@ -48,6 +51,7 @@ class HomePage extends StatelessWidget {
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
+            // ── Módulos activos ───────────────
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
               sliver: SliverToBoxAdapter(
@@ -55,8 +59,6 @@ class HomePage extends StatelessWidget {
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-            // ── Módulos activos ───────────────────────────
             if (activeModules.isEmpty)
               SliverToBoxAdapter(
                 child: Padding(
@@ -76,21 +78,26 @@ class HomePage extends StatelessWidget {
                   ),
                   itemCount: activeModules.length,
                   itemBuilder: (context, i) {
-                    final meta = _availableModules.firstWhere(
+                    final meta = _allModules.firstWhere(
                       (m) => m.id == activeModules[i],
                       orElse: () => _ModuleMeta(
                         id: activeModules[i],
                         label: activeModules[i],
                         icon: Icons.widgets_outlined,
                         description: '',
+                        route: null,
                       ),
                     );
-                    return _ModuleCard(meta: meta, active: true);
+                    return _ModuleCard(
+                      meta: meta,
+                      active: true,
+                      onTap: meta.route != null ? () => context.go(meta.route!) : null,
+                    );
                   },
                 ),
               ),
 
-            // ── Módulos disponibles para agregar ──────────
+            // ── Módulos disponibles ───────────
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
               sliver: SliverToBoxAdapter(
@@ -100,23 +107,22 @@ class HomePage extends StatelessWidget {
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-              sliver: SliverGrid.builder(
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 200,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.1,
-                ),
-                itemCount: _availableModules.where((m) => !activeModules.contains(m.id)).length,
-                itemBuilder: (context, i) {
-                  final inactive = _availableModules
-                      .where((m) => !activeModules.contains(m.id))
-                      .toList();
-                  final meta = inactive[i];
-                  return _ModuleCard(
-                    meta: meta,
-                    active: false,
-                    onTap: () => context.read<UserProvider>().addModule(meta.id),
+              sliver: Builder(
+                builder: (context) {
+                  final inactive = _allModules.where((m) => !activeModules.contains(m.id)).toList();
+                  return SliverGrid.builder(
+                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 200,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.1,
+                    ),
+                    itemCount: inactive.length,
+                    itemBuilder: (context, i) => _ModuleCard(
+                      meta: inactive[i],
+                      active: false,
+                      onTap: () => context.read<UserProvider>().addModule(inactive[i].id),
+                    ),
                   );
                 },
               ),
@@ -128,7 +134,6 @@ class HomePage extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
 class _EmptyModules extends StatelessWidget {
   final ThemeData theme;
   const _EmptyModules({required this.theme});
@@ -162,7 +167,6 @@ class _EmptyModules extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
 class _ModuleCard extends StatelessWidget {
   final _ModuleMeta meta;
   final bool active;
@@ -228,17 +232,18 @@ class _ModuleCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
 class _ModuleMeta {
   final String id;
   final String label;
   final IconData icon;
   final String description;
+  final String? route;
 
   const _ModuleMeta({
     required this.id,
     required this.label,
     required this.icon,
     required this.description,
+    required this.route,
   });
 }
