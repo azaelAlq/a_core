@@ -18,6 +18,7 @@ const _moods = [
 
 class DiaryEntryPage extends StatefulWidget {
   final DiaryEntry? entry;
+
   const DiaryEntryPage({super.key, this.entry});
 
   @override
@@ -26,28 +27,81 @@ class DiaryEntryPage extends StatefulWidget {
 
 class _DiaryEntryPageState extends State<DiaryEntryPage> {
   final _formKey = GlobalKey<FormState>();
+
   late final TextEditingController _titleCtrl;
   late final TextEditingController _contentCtrl;
+
+  final _tagCtrl = TextEditingController();
+
   late String _mood;
   late List<String> _tags;
   late DateTime _date;
-  final _tagCtrl = TextEditingController();
+
   DiaryTemplate? _selectedTemplate;
+
   final Map<String, TextEditingController> _customControllers = {};
+  final Map<String, dynamic> _customValues = {};
 
   bool get _isEditing => widget.entry != null;
 
   @override
   void initState() {
     super.initState();
+
     final e = widget.entry;
+
     _titleCtrl = TextEditingController(text: e?.title ?? '');
     _contentCtrl = TextEditingController(text: e?.content ?? '');
+
     _mood = e?.mood ?? 'neutral';
     _tags = List.from(e?.tags ?? []);
     _date = e?.date ?? DateTime.now();
+
     _titleCtrl.addListener(() => setState(() {}));
     _contentCtrl.addListener(() => setState(() {}));
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadTemplateData();
+    });
+  }
+
+  void _loadTemplateData() {
+    final entry = widget.entry;
+
+    if (entry == null) return;
+
+    final diary = context.read<DiaryProvider>();
+
+    if (entry.templateId == null) return;
+
+    try {
+      final template = diary.templates.firstWhere((t) => t.id == entry.templateId);
+
+      _selectedTemplate = template;
+
+      for (final f in template.fields) {
+        final existingValue = entry.customFields[f.id];
+
+        switch (f.type) {
+          case FieldType.text:
+          case FieldType.longText:
+          case FieldType.number:
+          case FieldType.time:
+            _customControllers[f.id] = TextEditingController(text: existingValue?.toString() ?? '');
+            break;
+
+          case FieldType.yesNo:
+            _customValues[f.id] = existingValue ?? false;
+            break;
+
+          case FieldType.rating:
+            _customValues[f.id] = existingValue ?? 3;
+            break;
+        }
+      }
+
+      setState(() {});
+    } catch (_) {}
   }
 
   @override
@@ -55,17 +109,43 @@ class _DiaryEntryPageState extends State<DiaryEntryPage> {
     _titleCtrl.dispose();
     _contentCtrl.dispose();
     _tagCtrl.dispose();
-    for (final c in _customControllers.values) c.dispose();
+
+    for (final c in _customControllers.values) {
+      c.dispose();
+    }
+
     super.dispose();
   }
 
   void _onTemplateSelected(DiaryTemplate? t) {
     setState(() {
       _selectedTemplate = t;
+
+      for (final c in _customControllers.values) {
+        c.dispose();
+      }
+
       _customControllers.clear();
+      _customValues.clear();
+
       if (t != null) {
         for (final f in t.fields) {
-          _customControllers[f.id] = TextEditingController();
+          switch (f.type) {
+            case FieldType.text:
+            case FieldType.longText:
+            case FieldType.number:
+            case FieldType.time:
+              _customControllers[f.id] = TextEditingController();
+              break;
+
+            case FieldType.yesNo:
+              _customValues[f.id] = false;
+              break;
+
+            case FieldType.rating:
+              _customValues[f.id] = 3;
+              break;
+          }
         }
       }
     });
@@ -78,15 +158,28 @@ class _DiaryEntryPageState extends State<DiaryEntryPage> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
     );
-    if (picked != null) setState(() => _date = picked);
+
+    if (picked != null) {
+      setState(() => _date = picked);
+    }
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
     final uid = context.read<AuthProvider>().user?.uid;
+
     if (uid == null) return;
 
-    final customFields = {for (final e in _customControllers.entries) e.key: e.value.text};
+    final customFields = <String, dynamic>{};
+
+    for (final e in _customControllers.entries) {
+      customFields[e.key] = e.value.text;
+    }
+
+    for (final e in _customValues.entries) {
+      customFields[e.key] = e.value;
+    }
 
     if (_isEditing) {
       await context.read<DiaryProvider>().updateEntry(
@@ -114,7 +207,118 @@ class _DiaryEntryPageState extends State<DiaryEntryPage> {
       );
     }
 
-    if (mounted) context.pop();
+    if (mounted) {
+      context.pop();
+    }
+  }
+
+  Widget _buildDynamicField(BuildContext context, ThemeData theme, TemplateField f) {
+    switch (f.type) {
+      case FieldType.text:
+        return _inputField(
+          theme,
+          child: TextFormField(
+            controller: _customControllers[f.id],
+            decoration: InputDecoration(
+              labelText: '${f.label}${f.required ? ' *' : ''}',
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(20),
+            ),
+          ),
+        );
+
+      case FieldType.longText:
+        return _inputField(
+          theme,
+          child: TextFormField(
+            controller: _customControllers[f.id],
+            maxLines: 5,
+            decoration: InputDecoration(
+              labelText: '${f.label}${f.required ? ' *' : ''}',
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(20),
+            ),
+          ),
+        );
+
+      case FieldType.number:
+        return _inputField(
+          theme,
+          child: TextFormField(
+            controller: _customControllers[f.id],
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: '${f.label}${f.required ? ' *' : ''}',
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(20),
+            ),
+          ),
+        );
+
+      case FieldType.yesNo:
+        return SwitchListTile.adaptive(
+          title: Text(f.label),
+          value: _customValues[f.id] ?? false,
+          onChanged: (v) {
+            setState(() {
+              _customValues[f.id] = v;
+            });
+          },
+        );
+
+      case FieldType.rating:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(f.label),
+            Slider(
+              value: (_customValues[f.id] ?? 3).toDouble(),
+              min: 1,
+              max: 5,
+              divisions: 4,
+              label: '${_customValues[f.id]}',
+              onChanged: (v) {
+                setState(() {
+                  _customValues[f.id] = v.round();
+                });
+              },
+            ),
+          ],
+        );
+
+      case FieldType.time:
+        return _inputField(
+          theme,
+          child: TextFormField(
+            controller: _customControllers[f.id],
+            readOnly: true,
+            decoration: InputDecoration(
+              labelText: f.label,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(20),
+              suffixIcon: const Icon(Icons.schedule_rounded),
+            ),
+            onTap: () async {
+              final picked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+
+              if (picked != null) {
+                _customControllers[f.id]!.text = picked.format(context);
+              }
+            },
+          ),
+        );
+    }
+  }
+
+  Widget _inputField(ThemeData theme, {required Widget child}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceVariant.withOpacity(.35),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: child,
+    );
   }
 
   @override
@@ -122,263 +326,57 @@ class _DiaryEntryPageState extends State<DiaryEntryPage> {
     final theme = Theme.of(context);
     final diary = context.watch<DiaryProvider>();
 
-    final formContent = Form(
-      key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.all(28),
-        children: [
-          // Fecha
-          InkWell(
-            onTap: _pickDate,
-            borderRadius: BorderRadius.circular(8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.calendar_today_outlined, size: 16, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  DateFormat('EEEE d \'de\' MMMM, yyyy', 'es').format(_date),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+    return Scaffold(
+      appBar: AppBar(title: Text(_isEditing ? 'Editar entrada' : 'Nueva entrada')),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            TextFormField(
+              controller: _titleCtrl,
+              decoration: const InputDecoration(hintText: 'Título'),
             ),
-          ),
-          const SizedBox(height: 28),
 
-          // Mood
-          Text(
-            '¿Cómo te sientes?',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _moods.map((m) {
-              final selected = _mood == m.$1;
-              return GestureDetector(
-                onTap: () => setState(() => _mood = m.$1),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? theme.colorScheme.primary.withOpacity(0.1)
-                        : theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: selected ? theme.colorScheme.primary : theme.dividerColor,
-                      width: selected ? 1.5 : 0.5,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(m.$2, style: TextStyle(fontSize: selected ? 28 : 22)),
-                      const SizedBox(height: 4),
-                      Text(m.$3, style: theme.textTheme.labelSmall),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 28),
+            const SizedBox(height: 16),
 
-          // Título
-          TextFormField(
-            controller: _titleCtrl,
-            style: theme.textTheme.headlineSmall,
-            decoration: InputDecoration(
-              hintText: 'Título de tu entrada...',
-              hintStyle: theme.textTheme.headlineSmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.3),
-              ),
-              border: InputBorder.none,
+            TextFormField(
+              controller: _contentCtrl,
+              maxLines: 10,
+              decoration: const InputDecoration(hintText: 'Contenido'),
             ),
-            validator: (v) => (v == null || v.isEmpty) ? 'Agrega un título' : null,
-          ),
-          Divider(color: theme.dividerColor, height: 1),
-          const SizedBox(height: 16),
 
-          // Contenido
-          TextFormField(
-            controller: _contentCtrl,
-            style: theme.textTheme.bodyLarge?.copyWith(height: 1.7),
-            maxLines: null,
-            minLines: 6,
-            decoration: InputDecoration(
-              hintText: '¿Qué pasó hoy? ¿Cómo te sentiste?',
-              hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.3),
-              ),
-              border: InputBorder.none,
-            ),
-            validator: (v) => (v == null || v.isEmpty) ? 'Escribe algo' : null,
-          ),
-          const SizedBox(height: 28),
+            const SizedBox(height: 24),
 
-          // Tags
-          Text(
-            'Etiquetas',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _tagCtrl,
-                  decoration: const InputDecoration(
-                    hintText: 'Agregar etiqueta y presiona Enter...',
-                    isDense: true,
-                  ),
-                  onSubmitted: (v) {
-                    if (v.trim().isNotEmpty) {
-                      setState(() {
-                        _tags.add(v.trim());
-                        _tagCtrl.clear();
-                      });
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton.outlined(
-                icon: const Icon(Icons.add, size: 18),
-                onPressed: () {
-                  if (_tagCtrl.text.trim().isNotEmpty) {
-                    setState(() {
-                      _tags.add(_tagCtrl.text.trim());
-                      _tagCtrl.clear();
-                    });
-                  }
-                },
-              ),
-            ],
-          ),
-          if (_tags.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: _tags
-                  .map(
-                    (t) => Chip(
-                      label: Text(t),
-                      labelStyle: theme.textTheme.labelSmall,
-                      onDeleted: () => setState(() => _tags.remove(t)),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
-
-          // Plantilla
-          if (diary.templates.isNotEmpty) ...[
-            const SizedBox(height: 28),
-            Text(
-              'Plantilla',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: 10),
             DropdownButtonFormField<DiaryTemplate?>(
               value: _selectedTemplate,
-              hint: const Text('Sin plantilla'),
+              decoration: const InputDecoration(hintText: 'Plantilla'),
               items: [
                 const DropdownMenuItem(value: null, child: Text('Sin plantilla')),
                 ...diary.templates.map((t) => DropdownMenuItem(value: t, child: Text(t.name))),
               ],
               onChanged: _onTemplateSelected,
             ),
-            if (_selectedTemplate != null) ...[
-              const SizedBox(height: 16),
-              ..._selectedTemplate!.fields.map(
-                (f) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: TextFormField(
-                    controller: _customControllers[f.id],
-                    decoration: InputDecoration(labelText: f.label + (f.required ? ' *' : '')),
-                    maxLines: f.type == FieldType.longText ? 4 : 1,
-                    keyboardType: f.type == FieldType.number
-                        ? TextInputType.number
-                        : TextInputType.text,
-                    validator: f.required
-                        ? (v) => (v == null || v.isEmpty) ? 'Campo requerido' : null
-                        : null,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ],
-      ),
-    );
 
-    final preview = Container(
-      decoration: BoxDecoration(
-        border: Border(left: BorderSide(color: theme.dividerColor, width: 0.5)),
-        color: theme.colorScheme.surface,
-      ),
-      padding: const EdgeInsets.all(24),
-      child: _EntryPreview(
-        title: _titleCtrl.text,
-        content: _contentCtrl.text,
-        mood: _mood,
-        tags: _tags,
-        date: _date,
-      ),
-    );
+            const SizedBox(height: 24),
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? 'Editar entrada' : 'Nueva entrada'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: FilledButton.icon(
-              onPressed: diary.loading ? null : _save,
-              icon: diary.loading
-                  ? const SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.save_outlined, size: 18),
+            if (_selectedTemplate != null)
+              ..._selectedTemplate!.fields.map((f) => _buildDynamicField(context, theme, f)),
+
+            const SizedBox(height: 32),
+
+            FilledButton.icon(
+              onPressed: _save,
+              icon: const Icon(Icons.save),
               label: const Text('Guardar'),
             ),
-          ),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth > 700) {
-            // ── Web: formulario + preview ────────────────
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(flex: 3, child: formContent),
-                SizedBox(width: 320, child: preview),
-              ],
-            );
-          }
-          // ── Móvil: solo formulario ───────────────────
-          return formContent;
-        },
+          ],
+        ),
       ),
     );
   }
 }
 
-// ── Preview en vivo ───────────────────────────────────
 class _EntryPreview extends StatelessWidget {
   final String title;
   final String content;
@@ -396,100 +394,6 @@ class _EntryPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final moodData = _moods.firstWhere((m) => m.$1 == mood, orElse: () => _moods[2]);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Vista previa',
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.4),
-            letterSpacing: 1.2,
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Card preview
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.background,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: theme.dividerColor, width: 0.5),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(moodData.$2, style: const TextStyle(fontSize: 28)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          moodData.$3,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.5),
-                          ),
-                        ),
-                        Text(
-                          DateFormat('d MMM yyyy', 'es').format(date),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.4),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title.isEmpty ? 'Sin título...' : title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: title.isEmpty ? theme.colorScheme.onSurface.withOpacity(0.3) : null,
-                ),
-              ),
-              if (content.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  content,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    height: 1.5,
-                  ),
-                  maxLines: 5,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              if (tags.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: tags
-                      .map(
-                        (t) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceVariant,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(t, style: theme.textTheme.labelSmall),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
+    return const SizedBox();
   }
 }
