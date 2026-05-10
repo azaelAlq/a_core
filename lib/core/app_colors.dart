@@ -38,7 +38,7 @@ abstract class AppColors {
   static const lightOnSurfaceHint = Color(0xFF888780);
 
   // ── Tema Oscuro ───────────────────────────────
-  static const darkBackground = Color(0xFF111110);
+  static const darkBackground = Color.fromARGB(255, 24, 24, 18);
   static const darkSurface = Color(0xFF1E1E1C);
   static const darkSurfaceVariant = Color(0xFF2A2A28);
   static const darkOutline = Color(0xFF3A3A37);

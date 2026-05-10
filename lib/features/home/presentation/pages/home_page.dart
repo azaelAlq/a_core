@@ -1,3 +1,6 @@
+import 'package:a_core/features/diario/presentation/provider/diary_provider.dart';
+import 'package:a_core/features/finanzas/presentation/provider/finanzas_provider.dart';
+import 'package:a_core/features/logros/presentation/provider/logros_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +31,13 @@ const _allModules = [
     description: 'Seguimiento de tus rutinas.',
     route: null,
   ),
+  _ModuleMeta(
+    id: 'finanzas',
+    label: 'Finanzas',
+    icon: Icons.account_balance_outlined,
+    description: 'Gestiona tu presupuesto y ahorros.',
+    route: AppRoutes.finanzas,
+  ),
 ];
 
 class HomePage extends StatelessWidget {
@@ -44,14 +54,26 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Hola, ${user?.displayName ?? 'usuario'} 👋',
+          'Hola, ${user?.displayName ?? 'Usuario'} 👋',
           style: theme.textTheme.titleLarge,
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout_outlined),
             tooltip: 'Cerrar sesión',
-            onPressed: () => context.read<AuthProvider>().signOut(),
+            onPressed: () async {
+              // 1. Primero cancela todos los streams
+              context.read<DiaryProvider>().clear();
+              context.read<LogrosProvider>().clear();
+              context.read<FinanzasProvider>().clear();
+              context.read<UserProvider>().stopWatching();
+
+              // 2. Espera un frame para que se procesen las cancelaciones
+              await Future.microtask(() {});
+
+              // 3. Luego cierra sesión
+              await context.read<AuthProvider>().signOut();
+            },
           ),
         ],
       ),

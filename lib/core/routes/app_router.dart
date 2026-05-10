@@ -1,6 +1,3 @@
-import 'package:a_core/features/logros/presentation/pages/achievements_page.dart';
-import 'package:a_core/features/logros/presentation/pages/logros_home_page.dart';
-import 'package:a_core/features/logros/presentation/pages/logros_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +12,14 @@ import 'package:a_core/features/diario/presentation/pages/diary_home_page.dart';
 import 'package:a_core/features/diario/presentation/pages/diary_entry_page.dart';
 import 'package:a_core/features/diario/presentation/pages/diary_templates_page.dart';
 import 'package:a_core/features/diario/domain/entities/diary_entry.dart';
+import 'package:a_core/features/logros/presentation/pages/logros_shell.dart';
+import 'package:a_core/features/logros/presentation/pages/logros_home_page.dart';
+import 'package:a_core/features/logros/presentation/pages/achievements_page.dart';
+import 'package:a_core/features/finanzas/presentation/pages/finanzas_shell.dart';
+import 'package:a_core/features/finanzas/presentation/pages/cuentas_page.dart';
+import 'package:a_core/features/finanzas/presentation/pages/cuenta_detalle_page.dart';
+import 'package:a_core/features/finanzas/presentation/pages/compromisos_page.dart';
+import 'package:a_core/features/finanzas/domain/entities/cuenta.dart';
 
 abstract class AppRoutes {
   static const login = '/login';
@@ -30,6 +35,11 @@ abstract class AppRoutes {
   // Logros
   static const logros = '/logros';
   static const logrosAchievements = '/logros/achievements';
+
+  // Finanzas
+  static const finanzas = '/finanzas';
+  static const finanzasCompromisos = '/finanzas/compromisos';
+  static const finanzasCuentaDetalle = '/finanzas/cuenta';
 }
 
 GoRouter createRouter(BuildContext context) {
@@ -85,6 +95,19 @@ GoRouter createRouter(BuildContext context) {
         routes: [
           GoRoute(path: AppRoutes.logros, builder: (_, __) => const LogrosHomePage()),
           GoRoute(path: AppRoutes.logrosAchievements, builder: (_, __) => const AchievementsPage()),
+        ],
+      ),
+
+      // ── Finanzas ──────────────────────────
+      GoRoute(
+        path: AppRoutes.finanzasCuentaDetalle,
+        builder: (_, state) => CuentaDetallePage(cuenta: state.extra as Cuenta),
+      ),
+      ShellRoute(
+        builder: (context, state, child) => FinanzasShell(child: child),
+        routes: [
+          GoRoute(path: AppRoutes.finanzas, builder: (_, __) => const CuentasPage()),
+          GoRoute(path: AppRoutes.finanzasCompromisos, builder: (_, __) => const CompromisosPage()),
         ],
       ),
     ],

@@ -183,6 +183,23 @@ class LogrosProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clear() {
+    _habitsSub?.cancel();
+    _habitsSub = null;
+    _logsSub?.cancel();
+    _logsSub = null;
+    _achievementsSub?.cancel();
+    _achievementsSub = null;
+    _habits = [];
+    _monthLogs = [];
+    _achievements = [];
+    _selectedMonth = DateTime.now();
+    _loading = false;
+    _error = null;
+    _newAchievement = null;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _habitsSub?.cancel();

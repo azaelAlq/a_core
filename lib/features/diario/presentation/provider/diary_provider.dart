@@ -148,6 +148,19 @@ class DiaryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clear() {
+    _entriesSub?.cancel();
+    _entriesSub = null;
+    _templatesSub?.cancel();
+    _templatesSub = null;
+    _entries = [];
+    _templates = [];
+    _filter = DiaryFilter.week;
+    _loading = false;
+    _error = null;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _entriesSub?.cancel();
