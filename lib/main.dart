@@ -3,6 +3,7 @@ import 'package:a_core/core/routes/app_router.dart';
 import 'package:a_core/features/auth/presentation/provider/auth_provider.dart';
 import 'package:a_core/features/diario/presentation/provider/diary_provider.dart';
 import 'package:a_core/features/finanzas/presentation/provider/finanzas_provider.dart';
+import 'package:a_core/features/libretas/presentation/provider/libretas_provider.dart';
 import 'package:a_core/features/logros/presentation/provider/logros_provider.dart';
 import 'package:a_core/features/user/presentation/provider/user_provider.dart';
 import 'package:a_core/firebase_options.dart';
@@ -25,6 +26,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => DiaryProvider()),
         ChangeNotifierProvider(create: (_) => LogrosProvider()),
         ChangeNotifierProvider(create: (_) => FinanzasProvider()),
+        ChangeNotifierProvider(create: (_) => LibretasProvider()),
       ],
       child: const MyApp(),
     ),
@@ -43,7 +45,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _router = createRouter(context); // ✅ solo una vez
+    _router = createRouter(context);
   }
 
   @override
@@ -65,7 +67,7 @@ class _MyAppState extends State<MyApp> {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.dark,
-      routerConfig: _router, // ✅ siempre la misma instancia
+      routerConfig: _router,
     );
   }
 }

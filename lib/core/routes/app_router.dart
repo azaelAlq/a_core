@@ -1,3 +1,9 @@
+import 'package:a_core/features/libretas/domain/entities/libreta.dart';
+import 'package:a_core/features/libretas/domain/entities/pagina.dart';
+import 'package:a_core/features/libretas/presentation/pages/libreta_detalle_page.dart';
+import 'package:a_core/features/libretas/presentation/pages/libretas_home_page.dart';
+import 'package:a_core/features/libretas/presentation/pages/pagina_editor_page.dart'
+    hide LibretaDetallePage;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -40,6 +46,11 @@ abstract class AppRoutes {
   static const finanzas = '/finanzas';
   static const finanzasCompromisos = '/finanzas/compromisos';
   static const finanzasCuentaDetalle = '/finanzas/cuenta';
+
+  // Libretas
+  static const libretas = '/libretas';
+  static const libretaDetalle = '/libretas/detalle';
+  static const paginaEditor = '/libretas/editor';
 }
 
 GoRouter createRouter(BuildContext context) {
@@ -109,6 +120,23 @@ GoRouter createRouter(BuildContext context) {
           GoRoute(path: AppRoutes.finanzas, builder: (_, __) => const CuentasPage()),
           GoRoute(path: AppRoutes.finanzasCompromisos, builder: (_, __) => const CompromisosPage()),
         ],
+      ),
+
+      // ── Libretas ──────────────────────────
+      GoRoute(path: AppRoutes.libretas, builder: (_, __) => const LibretasHomePage()),
+      GoRoute(
+        path: AppRoutes.libretaDetalle,
+        builder: (_, state) => LibretaDetallePage(libreta: state.extra as Libreta),
+      ),
+      GoRoute(
+        path: AppRoutes.paginaEditor,
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return PaginaEditorPage(
+            pagina: extra['pagina'] as Pagina,
+            libreta: extra['libreta'] as Libreta,
+          );
+        },
       ),
     ],
   );

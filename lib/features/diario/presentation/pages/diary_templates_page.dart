@@ -217,17 +217,28 @@ class _TemplateCardState extends State<_TemplateCard> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(_fieldIcon(f.type), size: 16, color: theme.colorScheme.primary),
+
                         const SizedBox(width: 8),
-                        Text(
-                          f.label,
-                          style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+
+                        Expanded(
+                          child: Text(
+                            f.label,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
-                        const SizedBox(width: 8),
+
+                        const SizedBox(width: 12),
+
                         Text(
                           _fieldTypeLabels[f.type] ?? '',
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: theme.colorScheme.onSurface.withOpacity(.45),
                           ),
