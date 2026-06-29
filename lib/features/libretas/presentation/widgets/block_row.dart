@@ -92,7 +92,7 @@ class _BlockRowState extends State<BlockRow> {
         if (mounted) setState(() => _hovering = false);
       },
       child: Padding(
-        padding: EdgeInsets.only(top: topPad, bottom: 2),
+        padding: EdgeInsets.only(top: topPad, bottom: 8),
         child: Row(
           crossAxisAlignment: isSeparador ? CrossAxisAlignment.center : CrossAxisAlignment.start,
           children: [

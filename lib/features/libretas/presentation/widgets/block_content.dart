@@ -59,7 +59,19 @@ class BlockContent extends StatelessWidget {
     // Backspace es manejado por el FocusNode en pagina_editor_page.dart
     // NewlineInterceptor: maneja Enter en móvil (teclado virtual).
     final field = CallbackShortcuts(
-      bindings: {const SingleActivator(LogicalKeyboardKey.enter): onEnter},
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.enter): onEnter,
+        const SingleActivator(LogicalKeyboardKey.enter, shift: true): () {
+          final sel = ctrl.selection;
+          if (!sel.isValid) return;
+          final text = ctrl.text;
+          final newText = text.replaceRange(sel.start, sel.end, '\n');
+          ctrl.value = TextEditingValue(
+            text: newText,
+            selection: TextSelection.collapsed(offset: sel.start + 1),
+          );
+        },
+      },
       child: TextField(
         controller: ctrl,
         focusNode: focus,

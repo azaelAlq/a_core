@@ -63,10 +63,19 @@ class NewlineInterceptor extends TextInputFormatter {
 
   @override
   TextEditingValue formatEditUpdate(TextEditingValue old, TextEditingValue next) {
-    if (next.text.contains('\n')) {
+    if (!next.text.contains('\n')) return next;
+
+    final oldNewlines = '\n'.allMatches(old.text).length;
+    final nextNewlines = '\n'.allMatches(next.text).length;
+    final textLengthDiff = next.text.length - old.text.length;
+
+    // Enter puro en móvil: exactamente un \n añadido, nada más
+    if (nextNewlines - oldNewlines == 1 && textLengthDiff == 1) {
       Future.microtask(onEnter);
-      return old; // devuelve sin el \n
+      return old;
     }
+
+    // Paste con \n → dejar pasar tal cual
     return next;
   }
 }
