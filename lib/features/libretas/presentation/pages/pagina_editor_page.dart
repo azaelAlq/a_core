@@ -28,6 +28,52 @@ class _PaginaEditorPageState extends State<PaginaEditorPage> {
   bool _saved = true;
   bool _disposed = false;
 
+  // ── Selección múltiple ───────────────────────────────────────────────
+  final Set<String> _selectedIds = {};
+  bool get _selectionMode => _selectedIds.isNotEmpty;
+
+  void _toggleSelect(String id) {
+    if (_disposed || !mounted) return;
+    for (final f in _focuses.values) {
+      if (f.hasFocus) f.unfocus();
+    }
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  void _selectAll() {
+    if (_disposed || !mounted) return;
+    setState(
+      () => _selectedIds
+        ..clear()
+        ..addAll(_blocks.map((b) => b.id)),
+    );
+  }
+
+  void _clearSelection() {
+    if (_disposed || !mounted) return;
+    setState(() => _selectedIds.clear());
+  }
+
+  Future<void> _copySelected() async {
+    final text = _blocks.where((b) => _selectedIds.contains(b.id)).map((b) => b.text).join('\n');
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    final count = _selectedIds.length;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$count bloque${count == 1 ? '' : 's'} copiado${count == 1 ? '' : 's'}'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+    _clearSelection();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -334,11 +380,37 @@ class _PaginaEditorPageState extends State<PaginaEditorPage> {
             Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: isWide ? 760 : double.infinity),
-                child: FormatToolbar(
-                  onBold: () => _applyFormat('**'),
-                  onItalic: () => _applyFormat('_'),
-                  onUnderline: () => _applyFormat('__'),
-                ),
+                child: _selectionMode
+                    ? Container(
+                        height: 44,
+                        color: theme.colorScheme.surfaceVariant,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.close_rounded, size: 20),
+                              tooltip: 'Cancelar',
+                              onPressed: _clearSelection,
+                            ),
+                            Text(
+                              '${_selectedIds.length} seleccionado${_selectedIds.length == 1 ? '' : 's'}',
+                              style: theme.textTheme.labelMedium,
+                            ),
+                            const Spacer(),
+                            TextButton(onPressed: _selectAll, child: const Text('Todo')),
+                            IconButton(
+                              icon: const Icon(Icons.copy_rounded, size: 20),
+                              tooltip: 'Copiar',
+                              onPressed: _copySelected,
+                            ),
+                          ],
+                        ),
+                      )
+                    : FormatToolbar(
+                        onBold: () => _applyFormat('**'),
+                        onItalic: () => _applyFormat('_'),
+                        onUnderline: () => _applyFormat('__'),
+                      ),
               ),
             ),
             Expanded(
@@ -364,6 +436,9 @@ class _PaginaEditorPageState extends State<PaginaEditorPage> {
                         onChangeType: (type) => _changeType(i, type),
                         onBackspaceEmpty: () => _deleteAt(i),
                         onMergeWithPrevious: () => _mergeWithPrevious(i),
+                        selected: _selectedIds.contains(b.id),
+                        selectionMode: _selectionMode,
+                        onToggleSelect: () => _toggleSelect(b.id),
                       ),
                     ),
                   );

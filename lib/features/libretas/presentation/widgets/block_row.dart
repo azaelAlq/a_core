@@ -14,6 +14,9 @@ class BlockRow extends StatefulWidget {
   final VoidCallback onToggleCheck;
   final VoidCallback onDelete;
   final Function(BlockType) onChangeType;
+  final bool selected;
+  final bool selectionMode;
+  final VoidCallback onToggleSelect;
 
   const BlockRow({
     super.key,
@@ -27,6 +30,9 @@ class BlockRow extends StatefulWidget {
     required this.onToggleCheck,
     required this.onDelete,
     required this.onChangeType,
+    required this.selected,
+    required this.selectionMode,
+    required this.onToggleSelect,
   });
 
   @override
@@ -84,6 +90,30 @@ class _BlockRowState extends State<BlockRow> {
 
     final handleOpacity = _hasFocus || _hovering ? 0.5 : 0.12;
 
+    final handle = SizedBox(
+      width: 32,
+      height: 32,
+      child: Center(
+        child: widget.selectionMode
+            ? Icon(
+                widget.selected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                size: 18,
+                color: widget.selected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurface.withOpacity(0.3),
+              )
+            : AnimatedOpacity(
+                opacity: handleOpacity,
+                duration: const Duration(milliseconds: 150),
+                child: Icon(
+                  Icons.drag_indicator_rounded,
+                  size: 16,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+      ),
+    );
+
     return MouseRegion(
       onEnter: (_) {
         if (mounted) setState(() => _hovering = true);
@@ -91,57 +121,56 @@ class _BlockRowState extends State<BlockRow> {
       onExit: (_) {
         if (mounted) setState(() => _hovering = false);
       },
-      child: Padding(
-        padding: EdgeInsets.only(top: topPad, bottom: 8),
-        child: Row(
-          crossAxisAlignment: isSeparador ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-          children: [
-            ReorderableDragStartListener(
-              index: widget.index,
-              child: GestureDetector(
-                onTap: _openTypeMenu,
-                child: SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: Center(
-                    child: AnimatedOpacity(
-                      opacity: handleOpacity,
-                      duration: const Duration(milliseconds: 150),
-                      child: Icon(
-                        Icons.drag_indicator_rounded,
-                        size: 16,
-                        color: theme.colorScheme.onSurface,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: widget.selectionMode ? widget.onToggleSelect : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          color: widget.selected ? theme.colorScheme.primary.withOpacity(0.08) : Colors.transparent,
+          child: Padding(
+            padding: EdgeInsets.only(top: topPad, bottom: 2),
+            child: Row(
+              crossAxisAlignment: isSeparador
+                  ? CrossAxisAlignment.center
+                  : CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: widget.selectionMode ? widget.onToggleSelect : _openTypeMenu,
+                  onLongPress: widget.onToggleSelect,
+                  child: widget.selectionMode
+                      ? handle
+                      : ReorderableDragStartListener(index: widget.index, child: handle),
+                ),
+                if (isSeparador)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Divider(
+                        height: 1,
+                        thickness: 0.5,
+                        color: theme.colorScheme.onSurface.withOpacity(0.15),
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: AbsorbPointer(
+                      absorbing: widget.selectionMode,
+                      child: BlockContent(
+                        block: block,
+                        ctrl: widget.ctrl,
+                        focus: widget.focus,
+                        onEnter: widget.onEnter,
+                        onBackspaceEmpty: widget.onBackspaceEmpty,
+                        onMergeWithPrevious: widget.onMergeWithPrevious,
+                        onToggleCheck: widget.onToggleCheck,
                       ),
                     ),
                   ),
-                ),
-              ),
+                const SizedBox(width: 8),
+              ],
             ),
-            if (isSeparador)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Divider(
-                    height: 1,
-                    thickness: 0.5,
-                    color: theme.colorScheme.onSurface.withOpacity(0.15),
-                  ),
-                ),
-              )
-            else
-              Expanded(
-                child: BlockContent(
-                  block: block,
-                  ctrl: widget.ctrl,
-                  focus: widget.focus,
-                  onEnter: widget.onEnter,
-                  onBackspaceEmpty: widget.onBackspaceEmpty,
-                  onMergeWithPrevious: widget.onMergeWithPrevious,
-                  onToggleCheck: widget.onToggleCheck,
-                ),
-              ),
-            const SizedBox(width: 8),
-          ],
+          ),
         ),
       ),
     );
