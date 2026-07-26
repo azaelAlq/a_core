@@ -27,6 +27,7 @@ import 'package:a_core/features/finanzas/presentation/pages/cuenta_detalle_page.
 import 'package:a_core/features/finanzas/presentation/pages/compromisos_page.dart';
 import 'package:a_core/features/finanzas/domain/entities/cuenta.dart';
 import 'package:a_core/features/sistemas/presentation/pages/sistemas_home_page.dart';
+import 'package:a_core/features/gym/presentation/pages/gym_home_page.dart';
 
 abstract class AppRoutes {
   static const login = '/login';
@@ -55,6 +56,9 @@ abstract class AppRoutes {
 
   // Sistemas
   static const sistemas = '/sistemas';
+
+  // Gym
+  static const gym = '/gym';
 }
 
 GoRouter createRouter(BuildContext context) {
@@ -80,8 +84,14 @@ GoRouter createRouter(BuildContext context) {
     routes: [
       // ── Auth ──────────────────────────────
       GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginPage()),
-      GoRoute(path: AppRoutes.register, builder: (_, __) => const RegisterPage()),
-      GoRoute(path: AppRoutes.forgotPassword, builder: (_, __) => const ForgotPasswordPage()),
+      GoRoute(
+        path: AppRoutes.register,
+        builder: (_, __) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        builder: (_, __) => const ForgotPasswordPage(),
+      ),
 
       // ── Home ──────────────────────────────
       GoRoute(path: AppRoutes.home, builder: (_, __) => const HomePage()),
@@ -96,11 +106,15 @@ GoRouter createRouter(BuildContext context) {
             routes: [
               GoRoute(
                 path: 'entry',
-                builder: (_, state) => DiaryEntryPage(entry: state.extra as DiaryEntry?),
+                builder: (_, state) =>
+                    DiaryEntryPage(entry: state.extra as DiaryEntry?),
               ),
             ],
           ),
-          GoRoute(path: AppRoutes.diaryTemplates, builder: (_, __) => const DiaryTemplatesPage()),
+          GoRoute(
+            path: AppRoutes.diaryTemplates,
+            builder: (_, __) => const DiaryTemplatesPage(),
+          ),
         ],
       ),
 
@@ -108,8 +122,14 @@ GoRouter createRouter(BuildContext context) {
       ShellRoute(
         builder: (context, state, child) => LogrosShell(child: child),
         routes: [
-          GoRoute(path: AppRoutes.logros, builder: (_, __) => const LogrosHomePage()),
-          GoRoute(path: AppRoutes.logrosAchievements, builder: (_, __) => const AchievementsPage()),
+          GoRoute(
+            path: AppRoutes.logros,
+            builder: (_, __) => const LogrosHomePage(),
+          ),
+          GoRoute(
+            path: AppRoutes.logrosAchievements,
+            builder: (_, __) => const AchievementsPage(),
+          ),
         ],
       ),
 
@@ -121,16 +141,26 @@ GoRouter createRouter(BuildContext context) {
       ShellRoute(
         builder: (context, state, child) => FinanzasShell(child: child),
         routes: [
-          GoRoute(path: AppRoutes.finanzas, builder: (_, __) => const CuentasPage()),
-          GoRoute(path: AppRoutes.finanzasCompromisos, builder: (_, __) => const CompromisosPage()),
+          GoRoute(
+            path: AppRoutes.finanzas,
+            builder: (_, __) => const CuentasPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.finanzasCompromisos,
+            builder: (_, __) => const CompromisosPage(),
+          ),
         ],
       ),
 
       // ── Libretas ──────────────────────────
-      GoRoute(path: AppRoutes.libretas, builder: (_, __) => const LibretasHomePage()),
+      GoRoute(
+        path: AppRoutes.libretas,
+        builder: (_, __) => const LibretasHomePage(),
+      ),
       GoRoute(
         path: AppRoutes.libretaDetalle,
-        builder: (_, state) => LibretaDetallePage(libreta: state.extra as Libreta),
+        builder: (_, state) =>
+            LibretaDetallePage(libreta: state.extra as Libreta),
       ),
       GoRoute(
         path: AppRoutes.paginaEditor,
@@ -144,7 +174,13 @@ GoRouter createRouter(BuildContext context) {
       ),
 
       // ── Sistemas ──────────────────────────
-      GoRoute(path: AppRoutes.sistemas, builder: (_, __) => const SistemasHomePage()),
+      GoRoute(
+        path: AppRoutes.sistemas,
+        builder: (_, __) => const SistemasHomePage(),
+      ),
+
+      // ── Gym ───────────────────────────────
+      GoRoute(path: AppRoutes.gym, builder: (_, __) => const GymHomePage()),
     ],
   );
 }

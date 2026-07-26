@@ -1,5 +1,6 @@
 import 'package:a_core/features/diario/presentation/provider/diary_provider.dart';
 import 'package:a_core/features/finanzas/presentation/provider/finanzas_provider.dart';
+import 'package:a_core/features/gym/presentation/provider/gym_provider.dart';
 import 'package:a_core/features/logros/presentation/provider/logros_provider.dart';
 import 'package:a_core/features/sistemas/presentation/provider/sistemas_provider.dart';
 import 'package:flutter/material.dart';
@@ -46,6 +47,13 @@ const _allModules = [
     description: 'Crea sistemas y dales seguimiento semanal.',
     route: AppRoutes.sistemas,
   ),
+  _ModuleMeta(
+    id: 'gym',
+    label: 'Gym',
+    icon: Icons.fitness_center_outlined,
+    description: 'Rutinas de entrenamiento editables.',
+    route: AppRoutes.gym,
+  ),
 ];
 
 class HomePage extends StatelessWidget {
@@ -65,7 +73,9 @@ class HomePage extends StatelessWidget {
     final isTablet = width >= 700 && width < 1200;
     final isDesktop = width >= 1200;
 
-    final inactiveModules = _allModules.where((m) => !activeModules.contains(m.id)).toList();
+    final inactiveModules = _allModules
+        .where((m) => !activeModules.contains(m.id))
+        .toList();
 
     // Grid: en móvil 2 columnas fijas, en tablet/desktop maxExtent
     final gridDelegate = isMobile
@@ -120,13 +130,16 @@ class HomePage extends StatelessWidget {
                                       (isMobile
                                               ? theme.textTheme.titleLarge
                                               : theme.textTheme.headlineSmall)
-                                          ?.copyWith(fontWeight: FontWeight.w800),
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                          ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   'Bienvenido de nuevo',
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.onSurface.withOpacity(.6),
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(.6),
                                   ),
                                 ),
                               ],
@@ -140,6 +153,7 @@ class HomePage extends StatelessWidget {
                               context.read<FinanzasProvider>().clear();
                               context.read<UserProvider>().stopWatching();
                               context.read<SistemasProvider>().clear();
+                              context.read<GymProvider>().clear();
                               await Future.microtask(() {});
                               await context.read<AuthProvider>().signOut();
                             },
@@ -149,7 +163,9 @@ class HomePage extends StatelessWidget {
                                 color: theme.colorScheme.surface,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: theme.colorScheme.outline.withOpacity(.08),
+                                  color: theme.colorScheme.outline.withOpacity(
+                                    .08,
+                                  ),
                                 ),
                               ),
                               child: const Icon(Icons.logout_rounded),
@@ -160,11 +176,15 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
 
-                  SliverToBoxAdapter(child: SizedBox(height: isMobile ? 20 : 28)),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: isMobile ? 20 : 28),
+                  ),
 
                   // ── Hero ──
                   SliverPadding(
-                    padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 16 : 24,
+                    ),
                     sliver: SliverToBoxAdapter(
                       child: _DashboardHero(
                         activeModules: activeModules.length,
@@ -173,11 +193,15 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
 
-                  SliverToBoxAdapter(child: SizedBox(height: isMobile ? 28 : 36)),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: isMobile ? 28 : 36),
+                  ),
 
                   // ── Módulos activos ──
                   SliverPadding(
-                    padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 16 : 24,
+                    ),
                     sliver: SliverToBoxAdapter(
                       child: _SectionHeader(
                         title: 'Tus módulos',
@@ -186,16 +210,24 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
 
-                  SliverToBoxAdapter(child: SizedBox(height: isMobile ? 14 : 18)),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: isMobile ? 14 : 18),
+                  ),
 
                   if (activeModules.isEmpty)
                     SliverPadding(
-                      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24),
-                      sliver: SliverToBoxAdapter(child: _EmptyModules(theme: theme)),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 16 : 24,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: _EmptyModules(theme: theme),
+                      ),
                     )
                   else
                     SliverPadding(
-                      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 16 : 24,
+                      ),
                       sliver: SliverGrid.builder(
                         gridDelegate: gridDelegate,
                         itemCount: activeModules.length,
@@ -214,17 +246,23 @@ class HomePage extends StatelessWidget {
                             meta: meta,
                             active: true,
                             isMobile: isMobile,
-                            onTap: meta.route != null ? () => context.go(meta.route!) : null,
+                            onTap: meta.route != null
+                                ? () => context.go(meta.route!)
+                                : null,
                           );
                         },
                       ),
                     ),
 
-                  SliverToBoxAdapter(child: SizedBox(height: isMobile ? 32 : 44)),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: isMobile ? 32 : 44),
+                  ),
 
                   // ── Agregar módulo ──
                   SliverPadding(
-                    padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 16 : 24,
+                    ),
                     sliver: SliverToBoxAdapter(
                       child: _SectionHeader(
                         title: 'Agregar módulo',
@@ -233,10 +271,17 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
 
-                  SliverToBoxAdapter(child: SizedBox(height: isMobile ? 14 : 18)),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: isMobile ? 14 : 18),
+                  ),
 
                   SliverPadding(
-                    padding: EdgeInsets.fromLTRB(isMobile ? 16 : 24, 0, isMobile ? 16 : 24, 40),
+                    padding: EdgeInsets.fromLTRB(
+                      isMobile ? 16 : 24,
+                      0,
+                      isMobile ? 16 : 24,
+                      40,
+                    ),
                     sliver: SliverGrid.builder(
                       gridDelegate: gridDelegate,
                       itemCount: inactiveModules.length,
@@ -246,7 +291,9 @@ class HomePage extends StatelessWidget {
                           active: false,
                           isMobile: isMobile,
                           onTap: () {
-                            context.read<UserProvider>().addModule(inactiveModules[i].id);
+                            context.read<UserProvider>().addModule(
+                              inactiveModules[i].id,
+                            );
                           },
                         );
                       },
@@ -280,7 +327,10 @@ class _DashboardHero extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [theme.colorScheme.primary, theme.colorScheme.primary.withOpacity(.82)],
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.primary.withOpacity(.82),
+          ],
         ),
         boxShadow: [
           BoxShadow(
@@ -298,8 +348,14 @@ class _DashboardHero extends StatelessWidget {
               children: [
                 Text(
                   'Tu espacio personal',
-                  style: (isMobile ? theme.textTheme.titleLarge : theme.textTheme.headlineSmall)
-                      ?.copyWith(color: theme.colorScheme.onPrimary, fontWeight: FontWeight.w800),
+                  style:
+                      (isMobile
+                              ? theme.textTheme.titleLarge
+                              : theme.textTheme.headlineSmall)
+                          ?.copyWith(
+                            color: theme.colorScheme.onPrimary,
+                            fontWeight: FontWeight.w800,
+                          ),
                 ),
                 SizedBox(height: isMobile ? 8 : 12),
                 Text(
@@ -338,7 +394,11 @@ class _DashboardHero extends StatelessWidget {
                 color: Colors.white.withOpacity(.12),
                 borderRadius: BorderRadius.circular(28),
               ),
-              child: const Icon(Icons.space_dashboard_rounded, size: 48, color: Colors.white),
+              child: const Icon(
+                Icons.space_dashboard_rounded,
+                size: 48,
+                color: Colors.white,
+              ),
             ),
           ],
         ],
@@ -352,12 +412,19 @@ class _HeroBadge extends StatelessWidget {
   final String label;
   final bool isMobile;
 
-  const _HeroBadge({required this.icon, required this.label, required this.isMobile});
+  const _HeroBadge({
+    required this.icon,
+    required this.label,
+    required this.isMobile,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 10 : 14, vertical: isMobile ? 8 : 10),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 10 : 14,
+        vertical: isMobile ? 8 : 10,
+      ),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(.12),
         borderRadius: BorderRadius.circular(12),
@@ -394,7 +461,12 @@ class _SectionHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         const SizedBox(height: 4),
         Text(
           subtitle,
@@ -438,7 +510,9 @@ class _EmptyModules extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             'Aún no tienes módulos activos',
-            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -462,7 +536,12 @@ class _ModuleCard extends StatefulWidget {
   final bool isMobile;
   final VoidCallback? onTap;
 
-  const _ModuleCard({required this.meta, required this.active, required this.isMobile, this.onTap});
+  const _ModuleCard({
+    required this.meta,
+    required this.active,
+    required this.isMobile,
+    this.onTap,
+  });
 
   @override
   State<_ModuleCard> createState() => _ModuleCardState();
@@ -490,7 +569,9 @@ class _ModuleCardState extends State<_ModuleCard> {
             duration: const Duration(milliseconds: 220),
             padding: EdgeInsets.all(p),
             decoration: BoxDecoration(
-              color: widget.active ? theme.colorScheme.primaryContainer : theme.colorScheme.surface,
+              color: widget.active
+                  ? theme.colorScheme.primaryContainer
+                  : theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(widget.isMobile ? 20 : 28),
               border: Border.all(
                 color: widget.active
@@ -516,7 +597,9 @@ class _ModuleCardState extends State<_ModuleCard> {
                     color: widget.active
                         ? theme.colorScheme.primary.withOpacity(.12)
                         : theme.colorScheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(widget.isMobile ? 14 : 18),
+                    borderRadius: BorderRadius.circular(
+                      widget.isMobile ? 14 : 18,
+                    ),
                   ),
                   child: Icon(
                     widget.meta.icon,
@@ -533,7 +616,9 @@ class _ModuleCardState extends State<_ModuleCard> {
                 Text(
                   widget.meta.label,
                   style:
-                      (widget.isMobile ? theme.textTheme.titleSmall : theme.textTheme.titleMedium)
+                      (widget.isMobile
+                              ? theme.textTheme.titleSmall
+                              : theme.textTheme.titleMedium)
                           ?.copyWith(
                             fontWeight: FontWeight.w800,
                             color: widget.active
@@ -578,7 +663,9 @@ class _ModuleCardState extends State<_ModuleCard> {
                     ),
                     const SizedBox(width: 4),
                     Icon(
-                      widget.active ? Icons.arrow_forward_rounded : Icons.add_rounded,
+                      widget.active
+                          ? Icons.arrow_forward_rounded
+                          : Icons.add_rounded,
                       size: widget.isMobile ? 15 : 18,
                       color: theme.colorScheme.primary,
                     ),
