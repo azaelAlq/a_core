@@ -5,6 +5,7 @@ import 'package:a_core/features/diario/presentation/provider/diary_provider.dart
 import 'package:a_core/features/finanzas/presentation/provider/finanzas_provider.dart';
 import 'package:a_core/features/libretas/presentation/provider/libretas_provider.dart';
 import 'package:a_core/features/logros/presentation/provider/logros_provider.dart';
+import 'package:a_core/features/sistemas/presentation/provider/sistemas_provider.dart';
 import 'package:a_core/features/user/presentation/provider/user_provider.dart';
 import 'package:a_core/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -27,6 +28,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => LogrosProvider()),
         ChangeNotifierProvider(create: (_) => FinanzasProvider()),
         ChangeNotifierProvider(create: (_) => LibretasProvider()),
+        ChangeNotifierProvider(create: (_) => SistemasProvider()),
       ],
       child: const MyApp(),
     ),

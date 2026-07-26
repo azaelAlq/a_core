@@ -26,6 +26,7 @@ import 'package:a_core/features/finanzas/presentation/pages/cuentas_page.dart';
 import 'package:a_core/features/finanzas/presentation/pages/cuenta_detalle_page.dart';
 import 'package:a_core/features/finanzas/presentation/pages/compromisos_page.dart';
 import 'package:a_core/features/finanzas/domain/entities/cuenta.dart';
+import 'package:a_core/features/sistemas/presentation/pages/sistemas_home_page.dart';
 
 abstract class AppRoutes {
   static const login = '/login';
@@ -51,6 +52,9 @@ abstract class AppRoutes {
   static const libretas = '/libretas';
   static const libretaDetalle = '/libretas/detalle';
   static const paginaEditor = '/libretas/editor';
+
+  // Sistemas
+  static const sistemas = '/sistemas';
 }
 
 GoRouter createRouter(BuildContext context) {
@@ -138,6 +142,9 @@ GoRouter createRouter(BuildContext context) {
           );
         },
       ),
+
+      // ── Sistemas ──────────────────────────
+      GoRoute(path: AppRoutes.sistemas, builder: (_, __) => const SistemasHomePage()),
     ],
   );
 }

@@ -1,6 +1,7 @@
 import 'package:a_core/features/diario/presentation/provider/diary_provider.dart';
 import 'package:a_core/features/finanzas/presentation/provider/finanzas_provider.dart';
 import 'package:a_core/features/logros/presentation/provider/logros_provider.dart';
+import 'package:a_core/features/sistemas/presentation/provider/sistemas_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -37,13 +38,13 @@ const _allModules = [
     icon: Icons.menu_book_outlined,
     description: 'Notas y páginas en markdown.',
     route: AppRoutes.libretas,
-  ),
+  ), // dentro de la lista const _allModules = [ ... ]
   _ModuleMeta(
-    id: 'gym',
-    label: 'Gym',
-    icon: Icons.fitness_center_outlined,
-    description: 'Rutinas de entrenamiento.',
-    route: null,
+    id: 'sistemas',
+    label: 'Sistemas',
+    icon: Icons.hub_outlined,
+    description: 'Crea sistemas y dales seguimiento semanal.',
+    route: AppRoutes.sistemas,
   ),
 ];
 
@@ -138,6 +139,7 @@ class HomePage extends StatelessWidget {
                               context.read<LogrosProvider>().clear();
                               context.read<FinanzasProvider>().clear();
                               context.read<UserProvider>().stopWatching();
+                              context.read<SistemasProvider>().clear();
                               await Future.microtask(() {});
                               await context.read<AuthProvider>().signOut();
                             },
