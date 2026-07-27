@@ -4,21 +4,29 @@ import 'package:flutter/material.dart';
 import '../../data/services/gym_service.dart';
 import '../../domain/entities/gym_session.dart';
 import '../../domain/entities/routine.dart';
+import '../../domain/entities/run_activity.dart';
+import '../../domain/entities/training_note.dart';
 
 class GymProvider extends ChangeNotifier {
   final GymService _service = GymService();
 
   List<Routine> _routines = [];
   List<GymSession> _sessions = [];
+  List<RunActivity> _runs = [];
+  List<TrainingNote> _notes = [];
   bool _loading = false;
   String? _error;
 
   StreamSubscription<List<Routine>>? _routinesSub;
   StreamSubscription<List<GymSession>>? _sessionsSub;
+  StreamSubscription<List<RunActivity>>? _runsSub;
+  StreamSubscription<List<TrainingNote>>? _notesSub;
   Timer? _saveTimer;
 
   List<Routine> get routines => _routines;
   List<GymSession> get sessions => _sessions;
+  List<RunActivity> get runs => _runs;
+  List<TrainingNote> get notes => _notes;
   bool get loading => _loading;
   String? get error => _error;
 
@@ -41,6 +49,16 @@ class GymProvider extends ChangeNotifier {
     _sessionsSub?.cancel();
     _sessionsSub = _service.watchSessions(userId).listen((list) {
       _sessions = list;
+      notifyListeners();
+    });
+    _runsSub?.cancel();
+    _runsSub = _service.watchRuns(userId).listen((list) {
+      _runs = list;
+      notifyListeners();
+    });
+    _notesSub?.cancel();
+    _notesSub = _service.watchNotes(userId).listen((list) {
+      _notes = list;
       notifyListeners();
     });
   }
@@ -138,6 +156,66 @@ class GymProvider extends ChangeNotifier {
     }
   }
 
+  // ── Carrera: actividades ──────────────────
+
+  Future<RunActivity?> createRun(String userId, RunActivity run) async {
+    try {
+      return await _service.createRun(userId, run);
+    } catch (_) {
+      _error = 'No se pudo guardar la actividad.';
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<void> updateRun(String userId, RunActivity run) async {
+    try {
+      await _service.updateRun(userId, run);
+    } catch (_) {
+      _error = 'No se pudo guardar la actividad.';
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteRun(String userId, String runId) async {
+    try {
+      await _service.deleteRun(userId, runId);
+    } catch (_) {
+      _error = 'No se pudo eliminar la actividad.';
+      notifyListeners();
+    }
+  }
+
+  // ── Carrera: notas ────────────────────────
+
+  Future<TrainingNote?> createNote(String userId, TrainingNote note) async {
+    try {
+      return await _service.createNote(userId, note);
+    } catch (_) {
+      _error = 'No se pudo guardar la nota.';
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<void> updateNote(String userId, TrainingNote note) async {
+    try {
+      await _service.updateNote(userId, note);
+    } catch (_) {
+      _error = 'No se pudo guardar la nota.';
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteNote(String userId, String noteId) async {
+    try {
+      await _service.deleteNote(userId, noteId);
+    } catch (_) {
+      _error = 'No se pudo eliminar la nota.';
+      notifyListeners();
+    }
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();
@@ -148,10 +226,16 @@ class GymProvider extends ChangeNotifier {
     _routinesSub = null;
     _sessionsSub?.cancel();
     _sessionsSub = null;
+    _runsSub?.cancel();
+    _runsSub = null;
+    _notesSub?.cancel();
+    _notesSub = null;
     _saveTimer?.cancel();
     _saveTimer = null;
     _routines = [];
     _sessions = [];
+    _runs = [];
+    _notes = [];
     _loading = false;
     _error = null;
     notifyListeners();
@@ -161,6 +245,8 @@ class GymProvider extends ChangeNotifier {
   void dispose() {
     _routinesSub?.cancel();
     _sessionsSub?.cancel();
+    _runsSub?.cancel();
+    _notesSub?.cancel();
     _saveTimer?.cancel();
     super.dispose();
   }
