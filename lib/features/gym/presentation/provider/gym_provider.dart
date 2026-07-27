@@ -2,21 +2,33 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../data/services/gym_service.dart';
+import '../../domain/entities/gym_session.dart';
 import '../../domain/entities/routine.dart';
 
 class GymProvider extends ChangeNotifier {
   final GymService _service = GymService();
 
   List<Routine> _routines = [];
+  List<GymSession> _sessions = [];
   bool _loading = false;
   String? _error;
 
   StreamSubscription<List<Routine>>? _routinesSub;
+  StreamSubscription<List<GymSession>>? _sessionsSub;
   Timer? _saveTimer;
 
   List<Routine> get routines => _routines;
+  List<GymSession> get sessions => _sessions;
   bool get loading => _loading;
   String? get error => _error;
+
+  /// Sesión en curso de una rutina (finishedAt == null), si existe.
+  GymSession? activeSessionFor(String routineId) {
+    for (final s in _sessions) {
+      if (s.routineId == routineId && s.isInProgress) return s;
+    }
+    return null;
+  }
 
   // ── Init / streams ────────────────────────────
 
@@ -24,6 +36,11 @@ class GymProvider extends ChangeNotifier {
     _routinesSub?.cancel();
     _routinesSub = _service.watchRoutines(userId).listen((list) {
       _routines = list;
+      notifyListeners();
+    });
+    _sessionsSub?.cancel();
+    _sessionsSub = _service.watchSessions(userId).listen((list) {
+      _sessions = list;
       notifyListeners();
     });
   }
@@ -70,6 +87,57 @@ class GymProvider extends ChangeNotifier {
     }
   }
 
+  // ── Sesiones ──────────────────────────────────
+
+  /// Inicia una sesión para la rutina. Si ya hay una activa, se continúa esa.
+  Future<void> startRoutine(String userId, Routine routine) async {
+    if (activeSessionFor(routine.id) != null) return;
+    try {
+      await _service.startSession(userId, routine);
+    } catch (_) {
+      _error = 'No se pudo iniciar la rutina.';
+      notifyListeners();
+    }
+  }
+
+  /// Finaliza la sesión activa de la rutina, congelando el estado actual.
+  Future<void> finishRoutine(String userId, Routine routine) async {
+    final active = activeSessionFor(routine.id);
+    if (active == null) return;
+    try {
+      await _service.finishSession(userId, active, routine);
+    } catch (_) {
+      _error = 'No se pudo finalizar la rutina.';
+      notifyListeners();
+    }
+  }
+
+  /// Pone done=false en todos los ejercicios y persiste. Retorna la rutina actualizada.
+  Future<Routine> uncheckAllCompleted(String userId, Routine routine) async {
+    final updated = routine.copyWith(
+      blocks: routine.blocks
+          .map(
+            (b) => b.copyWith(
+              exercises: b.exercises
+                  .map((e) => e.copyWith(done: false))
+                  .toList(),
+            ),
+          )
+          .toList(),
+    );
+    await updateRoutine(userId, updated);
+    return updated;
+  }
+
+  Future<void> deleteSession(String userId, String sessionId) async {
+    try {
+      await _service.deleteSession(userId, sessionId);
+    } catch (_) {
+      _error = 'No se pudo eliminar la sesión.';
+      notifyListeners();
+    }
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();
@@ -78,9 +146,12 @@ class GymProvider extends ChangeNotifier {
   void clear() {
     _routinesSub?.cancel();
     _routinesSub = null;
+    _sessionsSub?.cancel();
+    _sessionsSub = null;
     _saveTimer?.cancel();
     _saveTimer = null;
     _routines = [];
+    _sessions = [];
     _loading = false;
     _error = null;
     notifyListeners();
@@ -89,6 +160,7 @@ class GymProvider extends ChangeNotifier {
   @override
   void dispose() {
     _routinesSub?.cancel();
+    _sessionsSub?.cancel();
     _saveTimer?.cancel();
     super.dispose();
   }

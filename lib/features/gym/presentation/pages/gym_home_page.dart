@@ -44,6 +44,11 @@ class _GymHomePageState extends State<GymHomePage> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Historial de sesiones',
+            onPressed: () => context.push(AppRoutes.gymHistory),
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => _createRoutine(uid),
           ),

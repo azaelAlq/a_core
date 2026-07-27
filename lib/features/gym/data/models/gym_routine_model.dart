@@ -24,7 +24,7 @@ class GymRoutineModel extends Routine {
       emoji: d['emoji'] as String? ?? '🏋️',
       blocks:
           (d['blocks'] as List?)
-              ?.map((b) => _blockFromMap(Map<String, dynamic>.from(b as Map)))
+              ?.map((b) => blockFromMap(Map<String, dynamic>.from(b as Map)))
               .toList() ??
           const [],
       createdAt: (d['createdAt'] as Timestamp).toDate(),
@@ -48,34 +48,34 @@ class GymRoutineModel extends Routine {
     'name': name,
     'notes': notes,
     'emoji': emoji,
-    'blocks': blocks.map(_blockToMap).toList(),
+    'blocks': blocks.map(blockToMap).toList(),
     'createdAt': Timestamp.fromDate(createdAt),
     'isArchived': isArchived,
   };
 
   // ── Bloques ───────────────────────────────
 
-  static Block _blockFromMap(Map<String, dynamic> m) => Block(
+  static Block blockFromMap(Map<String, dynamic> m) => Block(
     id: m['id'] as String,
     label: m['label'] as String?,
     series: (m['series'] as num?)?.toInt() ?? 1,
     exercises:
         (m['exercises'] as List?)
-            ?.map((e) => _exerciseFromMap(Map<String, dynamic>.from(e as Map)))
+            ?.map((e) => exerciseFromMap(Map<String, dynamic>.from(e as Map)))
             .toList() ??
         const [],
   );
 
-  static Map<String, dynamic> _blockToMap(Block b) => {
+  static Map<String, dynamic> blockToMap(Block b) => {
     'id': b.id,
     'label': b.label,
     'series': b.series,
-    'exercises': b.exercises.map(_exerciseToMap).toList(),
+    'exercises': b.exercises.map(exerciseToMap).toList(),
   };
 
   // ── Ejercicios ────────────────────────────
 
-  static Exercise _exerciseFromMap(Map<String, dynamic> m) => Exercise(
+  static Exercise exerciseFromMap(Map<String, dynamic> m) => Exercise(
     id: m['id'] as String,
     name: m['name'] as String? ?? '',
     done: m['done'] as bool? ?? false,
@@ -83,28 +83,28 @@ class GymRoutineModel extends Routine {
     notes: m['notes'] as String?,
     sets:
         (m['sets'] as List?)
-            ?.map((s) => _setFromMap(Map<String, dynamic>.from(s as Map)))
+            ?.map((s) => setFromMap(Map<String, dynamic>.from(s as Map)))
             .toList() ??
         const [],
   );
 
-  static Map<String, dynamic> _exerciseToMap(Exercise e) => {
+  static Map<String, dynamic> exerciseToMap(Exercise e) => {
     'id': e.id,
     'name': e.name,
     'done': e.done,
     'perSide': e.perSide,
     'notes': e.notes,
-    'sets': e.sets.map(_setToMap).toList(),
+    'sets': e.sets.map(setToMap).toList(),
   };
 
   // ── Series ────────────────────────────────
 
-  static SetEntry _setFromMap(Map<String, dynamic> m) => SetEntry(
+  static SetEntry setFromMap(Map<String, dynamic> m) => SetEntry(
     reps: (m['reps'] as num?)?.toInt(),
     weight: (m['weight'] as num?)?.toDouble(),
   );
 
-  static Map<String, dynamic> _setToMap(SetEntry s) => {
+  static Map<String, dynamic> setToMap(SetEntry s) => {
     'reps': s.reps,
     'weight': s.weight,
   };

@@ -27,6 +27,7 @@ import 'package:a_core/features/finanzas/presentation/pages/cuenta_detalle_page.
 import 'package:a_core/features/finanzas/presentation/pages/compromisos_page.dart';
 import 'package:a_core/features/finanzas/domain/entities/cuenta.dart';
 import 'package:a_core/features/sistemas/presentation/pages/sistemas_home_page.dart';
+import 'package:a_core/features/gym/presentation/pages/gym_history_page.dart';
 import 'package:a_core/features/gym/presentation/pages/gym_home_page.dart';
 
 abstract class AppRoutes {
@@ -59,6 +60,7 @@ abstract class AppRoutes {
 
   // Gym
   static const gym = '/gym';
+  static const gymHistory = '/gym/history';
 }
 
 GoRouter createRouter(BuildContext context) {
@@ -181,6 +183,10 @@ GoRouter createRouter(BuildContext context) {
 
       // ── Gym ───────────────────────────────
       GoRoute(path: AppRoutes.gym, builder: (_, __) => const GymHomePage()),
+      GoRoute(
+        path: AppRoutes.gymHistory,
+        builder: (_, __) => const GymHistoryPage(),
+      ),
     ],
   );
 }

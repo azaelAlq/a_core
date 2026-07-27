@@ -23,6 +23,7 @@ class BlockEditor extends StatefulWidget {
 class _BlockEditorState extends State<BlockEditor> {
   static const _uuid = Uuid();
   late final TextEditingController _labelCtrl;
+  bool _expanded = true;
 
   @override
   void initState() {
@@ -65,6 +66,14 @@ class _BlockEditorState extends State<BlockEditor> {
     widget.onChanged(widget.block.copyWith(exercises: list));
   }
 
+  String _collapsedSummary(Block block) {
+    final label = (block.label == null || block.label!.trim().isEmpty)
+        ? 'Bloque'
+        : block.label!;
+    final n = block.exercises.length;
+    return '$label · ${block.series} series · $n ${n == 1 ? 'ejercicio' : 'ejercicios'}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -77,21 +86,39 @@ class _BlockEditorState extends State<BlockEditor> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Encabezado: etiqueta + series + eliminar ──
+            // ── Encabezado: chevron + etiqueta + eliminar ──
             Row(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _labelCtrl,
-                    decoration: const InputDecoration(
-                      hintText: 'Etiqueta (ej. Bloque A)',
-                      isDense: true,
-                      border: InputBorder.none,
-                    ),
-                    style: theme.textTheme.titleSmall,
-                    onChanged: (v) =>
-                        widget.onChanged(block.copyWith(label: v)),
+                IconButton(
+                  icon: Icon(
+                    _expanded ? Icons.expand_more : Icons.chevron_right,
+                    size: 22,
                   ),
+                  tooltip: _expanded ? 'Colapsar bloque' : 'Expandir bloque',
+                  onPressed: () => setState(() => _expanded = !_expanded),
+                ),
+                Expanded(
+                  child: _expanded
+                      ? TextField(
+                          controller: _labelCtrl,
+                          decoration: const InputDecoration(
+                            hintText: 'Etiqueta (ej. Bloque A)',
+                            isDense: true,
+                            border: InputBorder.none,
+                          ),
+                          style: theme.textTheme.titleSmall,
+                          onChanged: (v) =>
+                              widget.onChanged(block.copyWith(label: v)),
+                        )
+                      : GestureDetector(
+                          onTap: () => setState(() => _expanded = true),
+                          child: Text(
+                            _collapsedSummary(block),
+                            style: theme.textTheme.titleSmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                 ),
                 IconButton(
                   icon: Icon(
@@ -105,52 +132,56 @@ class _BlockEditorState extends State<BlockEditor> {
               ],
             ),
 
-            // ── Stepper de series ──
-            Row(
-              children: [
-                Text(
-                  'Series del bloque',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+            if (_expanded) ...[
+              // ── Stepper de series ──
+              Row(
+                children: [
+                  Text(
+                    'Series del bloque',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
                   ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.remove_circle_outline, size: 20),
-                  onPressed: block.series > 1 ? () => _changeSeries(-1) : null,
-                ),
-                Text(
-                  '${block.series}',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.remove_circle_outline, size: 20),
+                    onPressed: block.series > 1
+                        ? () => _changeSeries(-1)
+                        : null,
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline, size: 20),
-                  onPressed: () => _changeSeries(1),
-                ),
-              ],
-            ),
-
-            // ── Ejercicios ──
-            ...block.exercises.map(
-              (e) => ExerciseCard(
-                key: ValueKey(e.id),
-                exercise: e,
-                onChanged: _updateExercise,
-                onDelete: () => _deleteExercise(e.id),
+                  Text(
+                    '${block.series}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline, size: 20),
+                    onPressed: () => _changeSeries(1),
+                  ),
+                ],
               ),
-            ),
 
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: _addExercise,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Agregar ejercicio'),
+              // ── Ejercicios ──
+              ...block.exercises.map(
+                (e) => ExerciseCard(
+                  key: ValueKey(e.id),
+                  exercise: e,
+                  onChanged: _updateExercise,
+                  onDelete: () => _deleteExercise(e.id),
+                ),
               ),
-            ),
+
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _addExercise,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Agregar ejercicio'),
+                ),
+              ),
+            ],
           ],
         ),
       ),
