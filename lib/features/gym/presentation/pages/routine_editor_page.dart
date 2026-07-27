@@ -6,7 +6,6 @@ import 'package:uuid/uuid.dart';
 
 import 'package:a_core/features/auth/presentation/provider/auth_provider.dart';
 
-import '../../domain/entities/gym_session.dart';
 import '../../domain/entities/routine.dart';
 import '../provider/gym_provider.dart';
 import '../widgets/block_editor.dart';
@@ -25,7 +24,6 @@ class _RoutineEditorPageState extends State<RoutineEditorPage> {
   late Routine _routine;
   late final TextEditingController _nameCtrl;
   late final TextEditingController _notesCtrl;
-  Timer? _ticker;
 
   @override
   void initState() {
@@ -37,7 +35,6 @@ class _RoutineEditorPageState extends State<RoutineEditorPage> {
 
   @override
   void dispose() {
-    _ticker?.cancel();
     _nameCtrl.dispose();
     _notesCtrl.dispose();
     super.dispose();
@@ -69,18 +66,6 @@ class _RoutineEditorPageState extends State<RoutineEditorPage> {
 
   // ── Sesión ────────────────────────────────
 
-  /// Mantiene el cronómetro corriendo solo mientras hay sesión activa.
-  void _syncTicker(bool active) {
-    if (active && _ticker == null) {
-      _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() {});
-      });
-    } else if (!active && _ticker != null) {
-      _ticker?.cancel();
-      _ticker = null;
-    }
-  }
-
   Future<void> _uncheckAll() async {
     final updated = await context.read<GymProvider>().uncheckAllCompleted(
       _uid,
@@ -89,20 +74,17 @@ class _RoutineEditorPageState extends State<RoutineEditorPage> {
     if (mounted) setState(() => _routine = updated);
   }
 
-  static String _formatElapsed(Duration d) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    final h = d.inHours;
-    final m = d.inMinutes % 60;
-    final s = d.inSeconds % 60;
-    return h > 0 ? '$h:${two(m)}:${two(s)}' : '${two(m)}:${two(s)}';
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final gym = context.watch<GymProvider>();
-    final active = gym.activeSessionFor(_routine.id);
-    _syncTicker(active != null);
+    // Solo se reconstruye esta página cuando cambia si hay sesión activa
+    // o cuándo empezó, no ante cualquier otro cambio del provider
+    // (p. ej. el propio guardado con debounce de esta misma rutina).
+    final (sessionActive, sessionStartedAt) = context
+        .select<GymProvider, (bool, DateTime?)>((gym) {
+          final active = gym.activeSessionFor(_routine.id);
+          return (active != null, active?.startedAt);
+        });
 
     return Scaffold(
       appBar: AppBar(
@@ -119,75 +101,41 @@ class _RoutineEditorPageState extends State<RoutineEditorPage> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: _SessionBar(
-                  active: active,
-                  elapsed: active == null
-                      ? null
-                      : _formatElapsed(
-                          DateTime.now().difference(active.startedAt),
-                        ),
-                  onStart: () => gym.startRoutine(_uid, _routine),
-                  onFinish: () => gym.finishRoutine(_uid, _routine),
+                  active: sessionActive,
+                  startedAt: sessionStartedAt,
+                  onStart: () =>
+                      context.read<GymProvider>().startRoutine(_uid, _routine),
+                  onFinish: () =>
+                      context.read<GymProvider>().finishRoutine(_uid, _routine),
                   onUncheckAll: _uncheckAll,
                 ),
               ),
 
               // ── Contenido scrolleable ──
               Expanded(
-                child: ListView(
+                child: ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                  children: [
-                    TextField(
-                      controller: _nameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Nombre de la rutina',
-                      ),
-                      style: theme.textTheme.titleLarge,
-                      onChanged: (v) =>
-                          _update(_routine.copyWith(name: v.trim())),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _notesCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Notas',
-                        hintText: 'Calentamiento, indicaciones generales…',
-                      ),
-                      maxLines: 2,
-                      minLines: 1,
-                      onChanged: (v) => _update(_routine.copyWith(notes: v)),
-                    ),
-                    const SizedBox(height: 24),
+                  // Encabezado (nombre + notas + título) + bloques + botón agregar.
+                  itemCount: _routine.blocks.length + 2,
+                  itemBuilder: (context, index) {
+                    if (index == 0) return _buildHeader(theme);
 
-                    Text('Bloques', style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 12),
+                    if (index == _routine.blocks.length + 1) {
+                      return FilledButton.tonalIcon(
+                        onPressed: _addBlock,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Agregar bloque'),
+                      );
+                    }
 
-                    if (_routine.blocks.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: Text(
-                          'Agrega un bloque para empezar. Un bloque agrupa ejercicios que se hacen en circuito.',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.5),
-                          ),
-                        ),
-                      ),
-
-                    ..._routine.blocks.map(
-                      (b) => BlockEditor(
-                        key: ValueKey(b.id),
-                        block: b,
-                        onChanged: _updateBlock,
-                        onDelete: () => _deleteBlock(b.id),
-                      ),
-                    ),
-
-                    FilledButton.tonalIcon(
-                      onPressed: _addBlock,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Agregar bloque'),
-                    ),
-                  ],
+                    final block = _routine.blocks[index - 1];
+                    return BlockEditor(
+                      key: ValueKey(block.id),
+                      block: block,
+                      onChanged: _updateBlock,
+                      onDelete: () => _deleteBlock(block.id),
+                    );
+                  },
                 ),
               ),
             ],
@@ -196,19 +144,62 @@ class _RoutineEditorPageState extends State<RoutineEditorPage> {
       ),
     );
   }
+
+  Widget _buildHeader(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: _nameCtrl,
+          decoration: const InputDecoration(labelText: 'Nombre de la rutina'),
+          style: theme.textTheme.titleLarge,
+          onChanged: (v) => _update(_routine.copyWith(name: v.trim())),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _notesCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Notas',
+            hintText: 'Calentamiento, indicaciones generales…',
+          ),
+          maxLines: 2,
+          minLines: 1,
+          onChanged: (v) => _update(_routine.copyWith(notes: v)),
+        ),
+        const SizedBox(height: 24),
+
+        Text('Bloques', style: theme.textTheme.titleMedium),
+        const SizedBox(height: 12),
+
+        if (_routine.blocks.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Text(
+              'Agrega un bloque para empezar. Un bloque agrupa ejercicios que se hacen en circuito.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 }
 
 // ─────────────────────────────────────────────
+/// Breakpoints locales (móvil <700, tablet 700–1199, desktop ≥1200),
+/// siguiendo el mismo criterio usado en otras pantallas del proyecto.
 class _SessionBar extends StatelessWidget {
-  final GymSession? active;
-  final String? elapsed;
+  final bool active;
+  final DateTime? startedAt;
   final VoidCallback onStart;
   final VoidCallback onFinish;
   final VoidCallback onUncheckAll;
 
   const _SessionBar({
     required this.active,
-    required this.elapsed,
+    required this.startedAt,
     required this.onStart,
     required this.onFinish,
     required this.onUncheckAll,
@@ -217,13 +208,14 @@ class _SessionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final inProgress = active != null;
+    final width = MediaQuery.sizeOf(context).width;
+    final isMobile = width < 700;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: inProgress
+        color: active
             ? theme.colorScheme.primaryContainer
             : theme.colorScheme.surfaceVariant.withOpacity(0.4),
         borderRadius: BorderRadius.circular(16),
@@ -231,33 +223,43 @@ class _SessionBar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (inProgress) ...[
-            Row(
-              children: [
-                Icon(
-                  Icons.timer_outlined,
-                  size: 18,
-                  color: theme.colorScheme.onPrimaryContainer,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  elapsed ?? '',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontFeatures: const [FontFeature.tabularFigures()],
+          if (active) ...[
+            // Chip compacto del cronómetro en su propia línea: el único
+            // widget que se reconstruye cada segundo (ver _ElapsedClock).
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.timer_outlined,
+                    size: 16,
                     color: theme.colorScheme.onPrimaryContainer,
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'En curso',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer.withOpacity(
-                      0.7,
+                  const SizedBox(width: 6),
+                  _ElapsedClock(
+                    startedAt: startedAt!,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                      color: theme.colorScheme.onPrimaryContainer,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  Text(
+                    'En curso',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer.withOpacity(
+                        0.7,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 10),
           ],
@@ -265,25 +267,146 @@ class _SessionBar extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              FilledButton.icon(
-                onPressed: inProgress ? null : onStart,
-                icon: const Icon(Icons.play_arrow, size: 18),
-                label: const Text('Iniciar rutina'),
+              _SessionActionButton(
+                icon: Icons.play_arrow,
+                label: 'Iniciar rutina',
+                shortLabel: 'Iniciar',
+                compact: isMobile,
+                variant: _ButtonVariant.filled,
+                onPressed: active ? null : onStart,
               ),
-              FilledButton.tonalIcon(
-                onPressed: inProgress ? onFinish : null,
-                icon: const Icon(Icons.stop, size: 18),
-                label: const Text('Finalizar'),
+              _SessionActionButton(
+                icon: Icons.stop,
+                label: 'Finalizar rutina',
+                shortLabel: 'Finalizar',
+                compact: isMobile,
+                variant: _ButtonVariant.tonal,
+                onPressed: active ? onFinish : null,
               ),
-              OutlinedButton.icon(
+              _SessionActionButton(
+                icon: Icons.remove_done,
+                label: 'Desmarcar completados',
+                shortLabel: 'Desmarcar',
+                compact: isMobile,
+                variant: _ButtonVariant.outlined,
                 onPressed: onUncheckAll,
-                icon: const Icon(Icons.remove_done, size: 18),
-                label: const Text('Desmarcar completados'),
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+}
+
+enum _ButtonVariant { filled, tonal, outlined }
+
+/// Botón compacto para la barra de sesión: en móvil usa densidad
+/// compacta y texto corto; en tablet/desktop, texto completo.
+/// Mantiene un alto mínimo de 44 para un área de toque cómoda.
+class _SessionActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String shortLabel;
+  final bool compact;
+  final _ButtonVariant variant;
+  final VoidCallback? onPressed;
+
+  const _SessionActionButton({
+    required this.icon,
+    required this.label,
+    required this.shortLabel,
+    required this.compact,
+    required this.variant,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final style = ButtonStyle(
+      visualDensity: VisualDensity.compact,
+      minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
+      padding: WidgetStatePropertyAll(
+        EdgeInsets.symmetric(horizontal: compact ? 10 : 14, vertical: 8),
+      ),
+      textStyle: WidgetStatePropertyAll(
+        Theme.of(context).textTheme.labelMedium,
+      ),
+    );
+    final iconWidget = Icon(icon, size: 18);
+    final labelWidget = Text(
+      compact ? shortLabel : label,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    switch (variant) {
+      case _ButtonVariant.filled:
+        return FilledButton.icon(
+          onPressed: onPressed,
+          icon: iconWidget,
+          label: labelWidget,
+          style: style,
+        );
+      case _ButtonVariant.tonal:
+        return FilledButton.tonalIcon(
+          onPressed: onPressed,
+          icon: iconWidget,
+          label: labelWidget,
+          style: style,
+        );
+      case _ButtonVariant.outlined:
+        return OutlinedButton.icon(
+          onPressed: onPressed,
+          icon: iconWidget,
+          label: labelWidget,
+          style: style,
+        );
+    }
+  }
+}
+
+/// Aísla el "tick" del cronómetro: solo este texto se reconstruye cada
+/// segundo, no el resto de la página (nombre, notas, bloques, etc.).
+class _ElapsedClock extends StatefulWidget {
+  final DateTime startedAt;
+  final TextStyle? style;
+
+  const _ElapsedClock({required this.startedAt, required this.style});
+
+  @override
+  State<_ElapsedClock> createState() => _ElapsedClockState();
+}
+
+class _ElapsedClockState extends State<_ElapsedClock> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  static String _format(Duration d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    final h = d.inHours;
+    final m = d.inMinutes % 60;
+    final s = d.inSeconds % 60;
+    return h > 0 ? '$h:${two(m)}:${two(s)}' : '${two(m)}:${two(s)}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      _format(DateTime.now().difference(widget.startedAt)),
+      style: widget.style,
     );
   }
 }

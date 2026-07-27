@@ -70,10 +70,10 @@ class GymProvider extends ChangeNotifier {
     }
   }
 
-  /// Guarda con un pequeño debounce para no escribir en cada tecla.
+  /// Guarda con debounce para no escribir a Firestore en cada tecla.
   void scheduleSave(String userId, Routine routine) {
     _saveTimer?.cancel();
-    _saveTimer = Timer(const Duration(milliseconds: 700), () {
+    _saveTimer = Timer(const Duration(milliseconds: 500), () {
       updateRoutine(userId, routine);
     });
   }
