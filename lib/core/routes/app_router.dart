@@ -12,6 +12,7 @@ import 'package:a_core/features/auth/presentation/provider/auth_provider.dart';
 import 'package:a_core/features/auth/presentation/pages/login_page.dart';
 import 'package:a_core/features/auth/presentation/pages/register_page.dart';
 import 'package:a_core/features/auth/presentation/pages/forgot_password_page.dart';
+import 'package:a_core/features/auth/presentation/pages/splash_page.dart';
 import 'package:a_core/features/home/presentation/pages/home_page.dart';
 import 'package:a_core/features/diario/presentation/pages/diary_shell.dart';
 import 'package:a_core/features/diario/presentation/pages/diary_home_page.dart';
@@ -30,11 +31,13 @@ import 'package:a_core/features/sistemas/presentation/pages/sistemas_home_page.d
 import 'package:a_core/features/gym/presentation/pages/carrera_home_page.dart';
 import 'package:a_core/features/gym/presentation/pages/gym_history_page.dart';
 import 'package:a_core/features/gym/presentation/pages/gym_home_page.dart';
+import 'package:a_core/features/gastos/presentation/pages/gastos_page.dart';
 
 abstract class AppRoutes {
   static const login = '/login';
   static const register = '/register';
   static const forgotPassword = '/forgot-password';
+  static const splash = '/splash';
   static const home = '/home';
 
   // Diario
@@ -63,6 +66,9 @@ abstract class AppRoutes {
   static const gym = '/gym';
   static const gymHistory = '/gym/history';
   static const gymCarrera = '/gym/carrera';
+
+  // Gastos
+  static const gastos = '/gastos';
 }
 
 GoRouter createRouter(BuildContext context) {
@@ -80,13 +86,17 @@ GoRouter createRouter(BuildContext context) {
         AppRoutes.forgotPassword,
       ].contains(state.matchedLocation);
 
-      if (isInitial) return null;
+      if (isInitial) return AppRoutes.splash;
       if (!isAuthenticated && !isAuthRoute) return AppRoutes.login;
       if (isAuthenticated && isAuthRoute) return AppRoutes.home;
+      if (isAuthenticated && state.matchedLocation == AppRoutes.splash) {
+        return AppRoutes.home;
+      }
       return null;
     },
     routes: [
       // ── Auth ──────────────────────────────
+      GoRoute(path: AppRoutes.splash, builder: (_, __) => const SplashPage()),
       GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginPage()),
       GoRoute(
         path: AppRoutes.register,
@@ -193,6 +203,9 @@ GoRouter createRouter(BuildContext context) {
         path: AppRoutes.gymCarrera,
         builder: (_, __) => const CarreraHomePage(),
       ),
+
+      // ── Gastos ────────────────────────────
+      GoRoute(path: AppRoutes.gastos, builder: (_, __) => const GastosPage()),
     ],
   );
 }

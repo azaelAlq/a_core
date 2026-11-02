@@ -30,6 +30,50 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Widget de inicio: resumen semanal de ingresos y gastos -->
+        <receiver
+            android:name=".gastos.GastosWidgetProvider"
+            android:exported="false"
+            android:label="@string/gastos_widget_nombre">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/gastos_widget_info" />
+        </receiver>
+
+        <!-- Formulario flotante de registro rápido (se abre desde el widget) -->
+        <activity
+            android:name=".gastos.GastosQuickAddActivity"
+            android:theme="@style/QuickAddTheme"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- Widget de inicio: préstamos activos y registro rápido -->
+        <receiver
+            android:name=".prestamos.PrestamosWidgetProvider"
+            android:exported="false"
+            android:label="@string/prestamos_widget_nombre">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/prestamos_widget_info" />
+        </receiver>
+
+        <!-- Formulario flotante de nuevo préstamo (se abre desde el widget) -->
+        <activity
+            android:name=".prestamos.PrestamoQuickAddActivity"
+            android:theme="@style/QuickAddTheme"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:windowSoftInputMode="adjustResize" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

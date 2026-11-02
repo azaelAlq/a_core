@@ -1,5 +1,6 @@
 import 'package:a_core/features/diario/presentation/provider/diary_provider.dart';
 import 'package:a_core/features/finanzas/presentation/provider/finanzas_provider.dart';
+import 'package:a_core/features/gastos/presentation/provider/gastos_provider.dart';
 import 'package:a_core/features/gym/presentation/provider/gym_provider.dart';
 import 'package:a_core/features/logros/presentation/provider/logros_provider.dart';
 import 'package:a_core/features/sistemas/presentation/provider/sistemas_provider.dart';
@@ -53,6 +54,13 @@ const _allModules = [
     icon: Icons.fitness_center_outlined,
     description: 'Rutinas de entrenamiento editables.',
     route: AppRoutes.gym,
+  ),
+  _ModuleMeta(
+    id: 'gastos',
+    label: 'Gastos',
+    icon: Icons.receipt_long_outlined,
+    description: 'Registra lo que gastas y recibes cada semana.',
+    route: AppRoutes.gastos,
   ),
 ];
 
@@ -151,6 +159,7 @@ class HomePage extends StatelessWidget {
                               context.read<DiaryProvider>().clear();
                               context.read<LogrosProvider>().clear();
                               context.read<FinanzasProvider>().clear();
+                              context.read<GastosProvider>().clear();
                               context.read<UserProvider>().stopWatching();
                               context.read<SistemasProvider>().clear();
                               context.read<GymProvider>().clear();

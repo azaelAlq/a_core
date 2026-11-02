@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:a_core/features/finanzas/data/services/finanzas_service.dart';
+import 'package:a_core/features/finanzas/data/services/prestamos_widget_bridge.dart';
 import 'package:a_core/features/finanzas/domain/entities/cuenta.dart';
 import 'package:a_core/features/finanzas/domain/entities/movimiento.dart';
 import 'package:a_core/features/finanzas/domain/entities/pago_prestamo.dart';
@@ -26,6 +27,9 @@ class FinanzasProvider extends ChangeNotifier {
   StreamSubscription? _cuentasSub;
   StreamSubscription? _prestamosSub;
   StreamSubscription? _usosSub;
+
+  String? _uid;
+  bool _sincronizandoWidget = false;
 
   List<Cuenta> get cuentas => _cuentas;
   List<Prestamo> get prestamos => _prestamos;
@@ -56,6 +60,11 @@ class FinanzasProvider extends ChangeNotifier {
       _usosCredito.where((u) => u.estado != EstadoUsoCredito.liquidado).toList();
 
   void init(String userId) {
+    if (_uid == userId && _cuentasSub != null) {
+      sincronizarPendientesDelWidget(userId);
+      return;
+    }
+    _uid = userId;
     _cuentasSub?.cancel();
     _prestamosSub?.cancel();
     _usosSub?.cancel();
@@ -67,11 +76,54 @@ class FinanzasProvider extends ChangeNotifier {
     _prestamosSub = _service.watchPrestamos(userId).listen((list) {
       _prestamos = list;
       notifyListeners();
+      _actualizarWidgetPrestamos();
     });
     _usosSub = _service.watchUsosCredito(userId).listen((list) {
       _usosCredito = list;
       notifyListeners();
     });
+    sincronizarPendientesDelWidget(userId);
+  }
+
+  /// Refresca el resumen (por cobrar y activos) del widget de préstamos.
+  void _actualizarWidgetPrestamos() {
+    final activos = prestamosActivos;
+    PrestamosWidgetBridge.actualizarResumen(
+      porCobrar: activos.fold(0.0, (s, p) => s + p.saldoPendiente),
+      activos: activos.length,
+    );
+  }
+
+  /// Sube a Firestore los préstamos capturados desde el widget del inicio.
+  Future<void> sincronizarPendientesDelWidget(String userId) async {
+    if (_sincronizandoWidget) return;
+    _sincronizandoWidget = true;
+    try {
+      final pendientes = await PrestamosWidgetBridge.leerPendientes();
+      if (pendientes.isEmpty) return;
+      for (final p in pendientes) {
+        try {
+          final monto = (p['monto'] as num?)?.toDouble() ?? 0;
+          if (monto <= 0) continue;
+          final contacto = (p['contacto'] as String?)?.trim();
+          final concepto = (p['concepto'] as String?)?.trim();
+          final vencMillis = (p['fechaVencimiento'] as num?)?.toInt();
+          await _service.createPrestamo(
+            userId: userId,
+            deudor: (p['deudor'] ?? '').toString(),
+            contacto: contacto == null || contacto.isEmpty ? null : contacto,
+            monto: monto,
+            fechaVencimiento: vencMillis != null
+                ? DateTime.fromMillisecondsSinceEpoch(vencMillis)
+                : null,
+            concepto: concepto == null || concepto.isEmpty ? null : concepto,
+          );
+        } catch (_) {}
+      }
+      await PrestamosWidgetBridge.limpiarPendientes();
+    } finally {
+      _sincronizandoWidget = false;
+    }
   }
 
   void watchMovimientos(String userId, String cuentaId) {
@@ -283,6 +335,7 @@ class FinanzasProvider extends ChangeNotifier {
     _prestamosSub = null;
     _usosSub?.cancel();
     _usosSub = null;
+    _uid = null;
     for (final s in _movSubs.values) s.cancel();
     _movSubs.clear();
     for (final s in _pagoSubs.values) s.cancel();

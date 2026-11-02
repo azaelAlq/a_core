@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prestamos_widget_nombre">Préstamos</string>
+    <string name="prestamos_widget_desc">Registra préstamos que has dado</string>
+    <string name="prestamos_widget_por_cobrar">Por cobrar</string>
+    <string name="prestamos_widget_agregar">＋ Nuevo préstamo</string>
+    <plurals name="prestamos_widget_activos">
+        <item quantity="one">%d activo</item>
+        <item quantity="other">%d activos</item>
+    </plurals>
+
+    <string name="prestamos_qa_titulo">Nuevo préstamo</string>
+    <string name="prestamos_qa_deudor_hint">Nombre del deudor</string>
+    <string name="prestamos_qa_monto_hint">Monto prestado</string>
+    <string name="prestamos_qa_contacto_hint">Contacto / Teléfono</string>
+    <string name="prestamos_qa_concepto_hint">Concepto / Para qué</string>
+    <string name="prestamos_qa_vence_hint">Vence (opcional)</string>
+    <string name="prestamos_qa_limpiar_fecha">✕</string>
+    <string name="prestamos_qa_guardar">Registrar préstamo</string>
+    <string name="prestamos_qa_guardado">Préstamo guardado</string>
+    <string name="prestamos_qa_error">Escribe el deudor y un monto válido</string>
+</resources>

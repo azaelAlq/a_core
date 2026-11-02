@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gastos_widget_nombre">Gastos</string>
+    <string name="gastos_widget_desc">Registra ingresos y gastos de tu semana</string>
+    <string name="gastos_widget_semana">Esta semana</string>
+    <string name="gastos_widget_ingresos">Ingresos</string>
+    <string name="gastos_widget_gastos">Gastos</string>
+    <string name="gastos_widget_balance">Balance</string>
+    <string name="gastos_widget_agregar">＋ Agregar</string>
+
+    <string name="gastos_qa_titulo">Registrar</string>
+    <string name="gastos_qa_nombre_hint">Nombre</string>
+    <string name="gastos_qa_cantidad_hint">Cantidad</string>
+    <string name="gastos_qa_gasto">Gasto</string>
+    <string name="gastos_qa_ingreso">Ingreso</string>
+    <string name="gastos_qa_guardar">Guardar</string>
+    <string name="gastos_qa_guardado">Registro guardado</string>
+    <string name="gastos_qa_error">Escribe nombre y cantidad válida</string>
+
+    <!-- Paleta oscura (igual que la app) -->
+    <color name="gastos_surface">#1E1E1C</color>
+    <color name="gastos_surface_variant">#2A2A28</color>
+    <color name="gastos_outline">#3A3A37</color>
+    <color name="gastos_texto">#F1EFE8</color>
+    <color name="gastos_texto_muted">#B4B2A9</color>
+    <color name="gastos_texto_hint">#5F5E5A</color>
+    <color name="gastos_primary">#1565C0</color>
+    <color name="gastos_ingreso">#2E9E6B</color>
+    <color name="gastos_gasto">#E05252</color>
+</resources>
